@@ -18,7 +18,7 @@
 use chrono::NaiveDateTime;
 use serde::{Deserialize, Serialize};
 
-use super::types::{count, positive, round, rounded};
+use super::types::{count, null_as_default, positive, round, rounded};
 
 /// Garmin's daily sleep response, as it arrives.
 ///
@@ -48,6 +48,7 @@ pub struct DailySleep {
     nap_time_seconds: Option<u32>,
     /// Each nap. Garmin spells the name `DTOS`, so it is set by hand.
     #[serde(rename = "dailyNapDTOS")]
+    #[serde(deserialize_with = "null_as_default")]
     naps: Vec<RawNap>,
     awake_count: Option<u32>,
 
@@ -702,5 +703,16 @@ mod tests {
         let json = r#"{"calendarDate": null, "sleepTimeSeconds": null, "sleepScores": null}"#;
         let raw: DailySleep = serde_json::from_str(json).unwrap();
         assert!(raw.into_summary().is_none());
+    }
+
+    #[test]
+    fn null_nap_list_reads_as_no_naps() {
+        // The sleep range sends `"dailyNapDTOS": null` on some nights; a
+        // plain `Vec` would fail with "invalid type: null, expected a sequence".
+        let json =
+            r#"{"calendarDate": "2026-11-01", "sleepTimeSeconds": 27000, "dailyNapDTOS": null}"#;
+        let raw: DailySleep = serde_json::from_str(json).unwrap();
+        let summary = raw.into_summary().unwrap();
+        assert!(summary.naps.is_empty());
     }
 }

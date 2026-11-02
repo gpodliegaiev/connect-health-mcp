@@ -24,8 +24,8 @@ use serde::{Deserialize, Deserializer, Serialize};
 
 use super::activity_detail::{PoolLengthUnit, RawSplit, SplitSummary, TypeKey};
 use super::types::{
-    SpeedStyle, benefit, count, event_type, format_time, only_true, positive, round, rounded,
-    to_minutes,
+    SpeedStyle, benefit, count, event_type, format_time, null_as_default, only_true, positive,
+    round, rounded, to_minutes,
 };
 
 /// One activity (run, walk, strength session, ...) as Garmin sends it.
@@ -217,6 +217,7 @@ pub struct Activity {
     active_sets: Option<u32>,
     total_reps: Option<u32>,
     /// Totals per exercise.
+    #[serde(deserialize_with = "null_as_default")]
     summarized_exercise_sets: Vec<RawExerciseSet>,
 
     // --- Energy and hydration ---
@@ -297,6 +298,7 @@ pub struct Activity {
     /// Grams of CO2 saved (e.g. by cycling instead of driving).
     carbon_offset: Option<f64>,
     /// Totals per split type (e.g. run/walk/stand, ski runs vs. lifts).
+    #[serde(deserialize_with = "null_as_default")]
     split_summaries: Vec<RawSplit>,
 }
 

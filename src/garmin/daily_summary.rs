@@ -39,7 +39,7 @@
 use chrono::{NaiveDateTime, TimeDelta};
 use serde::{Deserialize, Serialize};
 
-use super::types::{count, positive, round, to_minutes};
+use super::types::{count, null_as_default, positive, round, to_minutes};
 
 // ---------------------------------------------------------------------------
 // Range response (v2): nested objects
@@ -49,6 +49,7 @@ use super::types::{count, positive, round, to_minutes};
 #[derive(Debug, Default, Deserialize)]
 #[serde(default)]
 pub struct DailySummaries {
+    #[serde(deserialize_with = "null_as_default")]
     data: Vec<RawDay>,
 }
 
@@ -158,6 +159,7 @@ struct RawBodyBattery {
     end_of_day_value: Option<u32>,
     dynamic_feedback_event: Option<RawFeedback>,
     end_of_day_dynamic_feedback_event: Option<RawFeedback>,
+    #[serde(deserialize_with = "null_as_default")]
     activity_events: Vec<RawEventV2>,
 }
 
@@ -288,6 +290,7 @@ pub struct UserDailySummary {
     body_battery_during_sleep: Option<u32>,
     body_battery_dynamic_feedback_event: Option<RawFeedback>,
     end_of_day_body_battery_dynamic_feedback_event: Option<RawFeedback>,
+    #[serde(deserialize_with = "null_as_default")]
     body_battery_activity_event_list: Vec<RawEventV1>,
 
     avg_waking_respiration_value: Option<f64>,

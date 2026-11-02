@@ -26,6 +26,7 @@
 //! app's gauge, 0 to 1; follows from the average and the baseline), GMT
 //! copies of local times, and the sleep window (already in `get_sleep`).
 
+use super::types::null_as_default;
 use chrono::NaiveDateTime;
 use serde::{Deserialize, Serialize};
 
@@ -33,6 +34,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Default, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
 pub struct HrvRange {
+    #[serde(deserialize_with = "null_as_default")]
     hrv_summaries: Vec<RawSummary>,
 }
 
@@ -41,6 +43,7 @@ pub struct HrvRange {
 #[serde(rename_all = "camelCase", default)]
 pub struct HrvNight {
     hrv_summary: Option<RawSummary>,
+    #[serde(deserialize_with = "null_as_default")]
     hrv_readings: Vec<RawReading>,
     /// Start of the measured window, local time, "YYYY-MM-DDTHH:MM:SS.0".
     start_timestamp_local: Option<String>,

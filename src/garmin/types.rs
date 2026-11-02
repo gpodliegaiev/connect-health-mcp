@@ -9,7 +9,7 @@
 //! `activity_detail.rs`, `sleep.rs`.
 
 use rmcp::schemars::{self, JsonSchema};
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Deserializer, Serialize};
 
 /// Sport groups accepted by the activity list's `activityType` filter.
 ///
@@ -203,6 +203,32 @@ pub(super) fn benefit(message: String) -> String {
 /// Real values are e.g. `race`, `training`, `fitness`.
 pub(super) fn event_type(key: Option<String>) -> Option<String> {
     key.filter(|k| k != "uncategorized")
+}
+
+/// Reads a field that Garmin may send as `null`, turning `null` into the
+/// type's empty default (an empty list for `Vec`).
+///
+/// Why it is needed: `#[serde(default)]` on a struct only fills in a field
+/// that is *missing* from the JSON. A field that is present but `null` is
+/// still handed to the field's own `Deserialize`, and `Vec` refuses `null`
+/// ("invalid type: null, expected a sequence"). Garmin does send `null` lists,
+/// e.g. `dailyNapDTOS` on some nights of the sleep range.
+///
+/// Used as `#[serde(deserialize_with = "null_as_default")]` on a field.
+/// - `'de` is a *lifetime*: it ties borrowed data to the input being read.
+/// - `D: Deserializer<'de>` is "any JSON reader"; `T` is the field's type,
+///   which must be readable (`Deserialize`) and have an empty value
+///   (`Default`).
+///
+/// It reads the value as `Option<T>` (`null` → `None`), then
+/// `unwrap_or_default()` swaps `None` for `T::default()`. The `?` returns
+/// early with the error if the value is neither `null` nor a valid `T`.
+pub(super) fn null_as_default<'de, D, T>(deserializer: D) -> Result<T, D::Error>
+where
+    D: Deserializer<'de>,
+    T: Default + Deserialize<'de>,
+{
+    Ok(Option::<T>::deserialize(deserializer)?.unwrap_or_default())
 }
 
 #[cfg(test)]

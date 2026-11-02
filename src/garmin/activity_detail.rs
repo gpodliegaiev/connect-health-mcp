@@ -15,7 +15,8 @@ use chrono::NaiveDateTime;
 use serde::{Deserialize, Serialize};
 
 use super::types::{
-    SpeedStyle, benefit, count, event_type, only_true, positive, round, rounded, to_minutes,
+    SpeedStyle, benefit, count, event_type, null_as_default, only_true, positive, round, rounded,
+    to_minutes,
 };
 
 /// Garmin's activity details response, as it arrives.
@@ -42,6 +43,7 @@ pub struct ActivityDetail {
     #[serde(rename = "summaryDTO")]
     summary: Option<DetailMeasurements>,
     /// Totals per split type. Empty for most activities.
+    #[serde(deserialize_with = "null_as_default")]
     split_summaries: Vec<RawSplit>,
     /// `true` for a multisport activity that groups several legs.
     is_multi_sport_parent: Option<bool>,
@@ -55,6 +57,7 @@ pub struct ActivityDetail {
 #[derive(Debug, Default, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
 struct Metadata {
+    #[serde(deserialize_with = "null_as_default")]
     child_ids: Vec<u64>,
 }
 

@@ -33,7 +33,7 @@
 use chrono::NaiveDateTime;
 use serde::{Deserialize, Serialize};
 
-use super::types::{only_true, round};
+use super::types::{null_as_default, only_true, round};
 
 /// Garmin's Fitness Age response, as it arrives.
 ///
@@ -92,6 +92,7 @@ struct RawComponent {
     /// `true` when there is no recent data for this component.
     stale: Option<bool>,
     /// Which inputs are missing, e.g. `["RHR"]` or `["WEIGHT"]`.
+    #[serde(deserialize_with = "null_as_default")]
     stale_inputs: Vec<String>,
     /// Day of the latest weight or body-fat measurement, "YYYY-MM-DD".
     last_measurement_date: Option<String>,
