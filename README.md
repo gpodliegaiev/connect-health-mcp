@@ -192,3 +192,7 @@ The code is commented heavily, as a Rust learning resource.
 - `garmin-openapi.json`: the full OpenAPI spec.
 
 To refresh both, run `python3 docs/update_garmin_spec.py`. After adding a tool, run it with `--offline` to update only the implementation status from the local spec.
+
+## License
+
+[MIT](LICENSE)

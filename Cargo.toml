@@ -1,7 +1,12 @@
 [package]
 name = "garmin-mcp"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2024"
+description = "MCP server that lets an AI read your Garmin Connect training and health data"
+repository = "https://github.com/gpodliegaiev/garmin-mcp"
+homepage = "https://github.com/gpodliegaiev/garmin-mcp"
+readme = "README.md"
+license = "MIT"
 
 [dependencies]
 anyhow = "1.0.104"
@@ -14,3 +19,8 @@ semver = "1.0.28"
 serde = { version = "1.0.229", features = ["derive"] }
 serde_json = "1.0.154"
 tokio = { version = "1.54.1", features = ["macros", "rt-multi-thread", "io-std", "sync"] }
+
+# The profile that 'dist' will build with
+[profile.dist]
+inherits = "release"
+lto = "thin"
