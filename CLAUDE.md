@@ -15,6 +15,7 @@ cargo clippy --all-targets  # lint
 cargo fmt                   # format
 cargo test                  # all tests
 cargo test <name>           # single test by name substring
+dist plan                   # check the release config (see Releases)
 ```
 
 ## Architecture
@@ -131,7 +132,25 @@ The maintainer is new to Rust. Comment code generously so it can be read as a le
 
 ## Configuration
 
-Copy `.env.example` to `.env` and set `GARMIN_API_KEY`. `.env` is git-ignored. Real env vars (e.g. from the MCP client config) override every `.env` file. Users should put the key in `~/.config/garmin-mcp/.env` (see `src/config.rs` for the full lookup order).
+Copy `.env.example` to `.env` and set `GARMIN_API_KEY`. `.env` is git-ignored. Real env vars (e.g. from the MCP client config) override every `.env` file. Users install with the cargo-dist installer and run `garmin-mcp setup`, which puts the key in `~/.config/garmin-mcp/.env` (see `src/config.rs` for the full lookup order).
+
+## Releases
+
+Built by [cargo-dist](https://github.com/axodotdev/cargo-dist) (the `dist` CLI, version pinned in `dist-workspace.toml`):
+
+- `dist-workspace.toml` holds the config: targets (macOS arm64/x86_64, `x86_64-unknown-linux-musl`, Windows x86_64 MSVC), `.tar.gz` archives on Unix and `.zip` on Windows, shell + PowerShell installers, `install-path = "~/.local/bin/"`, `install-updater = true` (ships `garmin-mcp-update`, which `update.rs` points to). `LICENSE`, `README.md` and `CHANGELOG.md` go into every archive.
+- `.github/workflows/release.yml` is **generated**: never edit it by hand. After changing `dist-workspace.toml` or upgrading dist, run `dist generate` and commit the result (CI fails if the workflow is out of date).
+- On a pushed tag `vX.Y.Z` the workflow builds every target, then publishes a GitHub release with the archives, installers, checksums, and the `## X.Y.Z` section of `CHANGELOG.md` as release notes. On pull requests it only runs `dist plan`.
+- The installer URLs in the README use `releases/latest/download/...`, so they always fetch the newest release.
+
+To cut a release:
+
+1. Bump `version` in `Cargo.toml` (the tag must match it) and run `cargo build` to update `Cargo.lock`.
+2. Move the `## Unreleased` notes in `CHANGELOG.md` under a new `## X.Y.Z - YYYY-MM-DD` heading.
+3. Check locally: `dist plan` (lists the artifacts, reads the changelog) and optionally `dist build --artifacts=local` (builds the host archive into `target/distrib/`).
+4. Commit, then `git tag vX.Y.Z && git push && git push origin vX.Y.Z`. Pushing a tag publishes to users, so ask the maintainer first.
+
+Users on older versions see the new release through the update notice within a day.
 
 ## Constraints
 
