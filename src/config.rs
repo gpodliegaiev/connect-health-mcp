@@ -1,5 +1,8 @@
 //! Runtime configuration, read from environment variables and `.env` files.
 //!
+//! Settings: `GARMIN_API_KEY` (required), `GARMIN_BASE_URL` (optional) and
+//! `GARMIN_MCP_NO_UPDATE_CHECK` (optional, turns off the update check).
+//!
 //! Each setting is looked up in this order; the first non-empty value wins:
 //! 1. A real environment variable, e.g. set in the MCP client's server
 //!    config (`claude mcp add -e ...`, `"env"` in Claude Desktop's config).
@@ -49,6 +52,10 @@ pub struct Config {
     /// Personal API key, sent as `Authorization: ApiKey <key>` to get a
     /// bearer token. Secret: never log it.
     pub api_key: String,
+    /// Whether to look for a newer release at startup (see `update.rs`).
+    /// `false` when `GARMIN_MCP_NO_UPDATE_CHECK` is set to anything but
+    /// `0`, `false`, `no` or `off`.
+    pub update_check: bool,
 }
 
 impl Config {
@@ -89,6 +96,11 @@ impl Config {
             base_url: sources.base_url(),
             // Field init shorthand: `api_key` means `api_key: api_key`.
             api_key,
+            // `is_none_or` is `true` when the setting is missing or the
+            // closure returns `true` for its value.
+            update_check: sources
+                .find("GARMIN_MCP_NO_UPDATE_CHECK")
+                .is_none_or(|(value, _)| is_off(&value)),
         })
     }
 }
@@ -203,6 +215,11 @@ fn clean(value: &str) -> Option<String> {
     let value = value.trim();
     // `bool::then` gives `Some(...)` when the condition is true, else `None`.
     (!value.is_empty()).then(|| value.to_string())
+}
+
+/// Whether a flag's value means "off" (`0`, `false`, `no`, `off`, any case).
+fn is_off(value: &str) -> bool {
+    matches!(value.to_lowercase().as_str(), "0" | "false" | "no" | "off")
 }
 
 /// This app's folder inside the user's config folder, e.g.
@@ -346,6 +363,7 @@ impl fmt::Debug for Config {
         f.debug_struct("Config")
             .field("base_url", &self.base_url)
             .field("api_key", &"***")
+            .field("update_check", &self.update_check)
             .finish()
     }
 }
@@ -421,6 +439,27 @@ mod tests {
         assert!(message.contains("the GARMIN_API_KEY environment variable"));
         assert!(message.contains(&missing.display().to_string()));
         assert!(message.contains(&other.display().to_string()));
+    }
+
+    #[test]
+    fn update_check_is_on_unless_turned_off() {
+        let key = temp_env_file("update_check", "GARMIN_API_KEY=k\n");
+        let with = |value: &'static str| {
+            let env =
+                move |name: &str| (name == "GARMIN_MCP_NO_UPDATE_CHECK").then(|| value.to_string());
+            Config::resolve(env, std::slice::from_ref(&key))
+                .unwrap()
+                .update_check
+        };
+        assert!(
+            Config::resolve(no_env, std::slice::from_ref(&key))
+                .unwrap()
+                .update_check
+        );
+        assert!(!with("1"));
+        assert!(!with("true"));
+        assert!(with("0"));
+        assert!(with("False"));
     }
 
     #[test]

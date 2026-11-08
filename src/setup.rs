@@ -78,6 +78,8 @@ pub async fn run() -> anyhow::Result<()> {
     let config = Config {
         base_url: config::base_url(),
         api_key: key.clone(),
+        // Not used by the key check.
+        update_check: false,
     };
     // `true` if Garmin confirmed the key, `false` if it couldn't be checked.
     let checked = match GarminClient::new(&config)?.check_key().await {

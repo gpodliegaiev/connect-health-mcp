@@ -19,9 +19,10 @@ mod config;
 mod garmin;
 mod server;
 mod setup;
+mod update;
 
 // `IsTerminal` adds `.is_terminal()` to stdin/stdout/stderr.
-use std::io::IsTerminal;
+use std::{io::IsTerminal, sync::Arc};
 
 // `use` brings names into scope so we can write `stdio()` instead of
 // `rmcp::transport::stdio()`.
@@ -35,7 +36,7 @@ use rmcp::{ServiceExt, transport::stdio};
 
 // `crate::` means "starting from the root of this project". This imports the
 // `GarminServer` struct defined in `src/server.rs`.
-use crate::{config::Config, garmin::GarminClient, server::GarminServer};
+use crate::{config::Config, garmin::GarminClient, server::GarminServer, update::UpdateNotice};
 
 /// Help text for `garmin-mcp --help`.
 const USAGE: &str = "\
@@ -115,16 +116,25 @@ async fn serve() -> anyhow::Result<()> {
     // `&config` lends the config to `new` without giving it away.
     let garmin = GarminClient::new(&config)?;
 
+    // Look for a newer release in the background (see `update.rs`). The
+    // server and the check share the same `UpdateNotice` through an `Arc`
+    // (a shared pointer); `Arc::clone` makes a second handle to it, not a
+    // copy of the data.
+    let update = Arc::new(UpdateNotice::default());
+    if config.update_check {
+        update::spawn_check(Arc::clone(&update));
+    }
+
     // Create our server and start serving it over stdin/stdout.
-    // - `GarminServer::new(garmin)` builds the server value (see
-    //   `server.rs`), moving the Garmin client into it.
+    // - `GarminServer::new(garmin, update)` builds the server value (see
+    //   `server.rs`), moving the Garmin client and the notice into it.
     // - `.serve(stdio())` performs the MCP handshake with the client and
     //   returns a handle to the running service.
     // - `.await` pauses here until that async work finishes, without blocking
     //   the thread.
     // - `?` is error propagation: if the result is an error, return it from
     //   `main` immediately; if it is `Ok(value)`, unwrap it to `value`.
-    let service = GarminServer::new(garmin).serve(stdio()).await?;
+    let service = GarminServer::new(garmin, update).serve(stdio()).await?;
 
     // Wait until the client closes the connection (or an error occurs).
     // While we wait, the service handles incoming requests in the background.

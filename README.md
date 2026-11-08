@@ -64,6 +64,7 @@ Other commands: `garmin-mcp --help` and `garmin-mcp --version`. Without argument
 |---|---|---|
 | `GARMIN_API_KEY` | yes | none |
 | `GARMIN_BASE_URL` | no | `https://personal.connectapi.garmin.com` |
+| `GARMIN_MCP_NO_UPDATE_CHECK` | no | unset (set to `1` to turn off the update check, see [Updates](#updates)) |
 
 The server looks for each variable in these places, in order, and uses the first value it finds:
 
@@ -130,6 +131,21 @@ With either client, a key passed in the client's config is stored there in plain
 
 The server talks to the client over stdin/stdout. Logs go to stderr.
 
+## Updates
+
+At startup, the server asks GitHub for the latest release, at most once a day. If a newer version exists, it adds a short note to the next tool result, once per session, so your AI app can tell you. The note says how to update, depending on how you installed it:
+
+| Installed with | Update command |
+|---|---|
+| Homebrew | `brew upgrade garmin-mcp` |
+| The install script | `garmin-mcp-update` |
+| Built from source | `git pull`, then `cargo build --release` |
+| Downloaded by hand | download the new release and replace the binary |
+
+Then restart your AI app. Nothing is updated automatically.
+
+The check runs in the background and never slows down a tool call. If GitHub can't be reached, nothing happens. The time of the last check is stored in `~/.config/garmin-mcp/update-check.json`. To turn the check off, set `GARMIN_MCP_NO_UPDATE_CHECK=1` in the environment or in `~/.config/garmin-mcp/.env`.
+
 ## Development
 
 ```sh
@@ -147,6 +163,7 @@ src/
 ├── main.rs           entry point: runs the server on stdio, or `setup` / `--help` / `--version`
 ├── config.rs         reads GARMIN_API_KEY / GARMIN_BASE_URL from env vars and .env files
 ├── setup.rs          `garmin-mcp setup`: checks and saves the API key
+├── update.rs         checks GitHub for a newer release and adds a note to a tool result
 ├── server.rs         MCP tools, one #[tool] method each (see the table above)
 └── garmin/
     ├── activity.rs         activity list entries (Activity)
