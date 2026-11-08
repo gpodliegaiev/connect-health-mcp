@@ -21,7 +21,7 @@ cargo test <name>           # single test by name substring
 
 - Built on the `rmcp` crate (feature `transport-io`) with a `tokio` multi-thread runtime.
 - `src/main.rs` — entry point; loads `Config`, builds `GarminClient`, constructs `GarminServer` and serves it over stdio transport.
-- `src/config.rs` — `Config` from env vars / `.env` (`GARMIN_API_KEY` required, `GARMIN_BASE_URL` optional). Custom `Debug` hides the key.
+- `src/config.rs` — `Config` (`GARMIN_API_KEY` required, `GARMIN_BASE_URL` optional). Each value: env var → `.env` in the cwd or a parent → `config_dir()/.env` (`~/.config/garmin-mcp`, `$XDG_CONFIG_HOME` if absolute, `%APPDATA%` on Windows) → `.env` next to the binary; first non-empty (trimmed) wins. Files are parsed with `dotenvy::from_path_iter`, never loaded into the process env; `Config::resolve` takes the env lookup and file list as arguments for tests. The missing-key error lists every place checked. Parse warnings print only the path (dotenvy errors contain the line, which may be the key). Custom `Debug` hides the key.
 - `src/garmin/auth.rs` — `TokenManager`: `POST /personalapitoken-service/personal-api/personal-api-key/token` with `Authorization: ApiKey <key>` returns a bearer JWT as plain text, valid 24h. Cached behind a tokio `Mutex`, refreshed 5 min before expiry. Uses `SystemTime`, not `Instant` (macOS `Instant` pauses during sleep).
 - `src/garmin/client.rs` — `GarminClient`: authenticated GETs with `Authorization: Bearer <token>`; on 401 invalidates the token and retries once. API calls (`list_activities`, `activity_detail`, `daily_sleep`, `fitness_age`, `hrv_range`, `hrv_night`, `daily_summaries`, `daily_summary`, `sleep_range`, `heart_rate_zones`, `weight`, `body_battery`, `heart_rate_day`) return typed structs via generic `get_json<T, Q>` (`Q` = any `Serialize` query, e.g. `&[("date", "2026-10-23")]`). Endpoints that answer 204 (empty body) for "no data" use `get_optional_json`, which returns `Option<T>`.
 - Response types all follow one pattern: a raw struct (Deserialize from Garmin camelCase, Garmin units, every field `Option`, unknown Garmin fields ignored) → `into_summary()` → an output struct (Serialize as snake_case, unit in every field name, `None` skipped).
@@ -129,7 +129,7 @@ The maintainer is new to Rust. Comment code generously so it can be read as a le
 
 ## Configuration
 
-Copy `.env.example` to `.env` and set `GARMIN_API_KEY`. `.env` is git-ignored. Real env vars (e.g. from the MCP client config) override `.env`.
+Copy `.env.example` to `.env` and set `GARMIN_API_KEY`. `.env` is git-ignored. Real env vars (e.g. from the MCP client config) override every `.env` file. Users should put the key in `~/.config/garmin-mcp/.env` (see `src/config.rs` for the full lookup order).
 
 ## Constraints
 

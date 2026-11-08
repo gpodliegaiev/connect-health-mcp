@@ -61,26 +61,39 @@ The binary is written to `target/release/garmin-mcp`. Rebuild after pulling chan
 | `GARMIN_API_KEY` | yes | none |
 | `GARMIN_BASE_URL` | no | `https://personal.connectapi.garmin.com` |
 
-The server reads variables from the environment and from a `.env` file. Environment variables take priority.
+The server looks for each variable in these places, in order, and uses the first value it finds:
 
-> **Note:** `.env` is only found in the directory the server is started from, or one of its parents. MCP clients often start servers from another directory. If the server exits with `GARMIN_API_KEY is not set`, pass the key through the client's config instead, as shown below.
+1. An environment variable, for example set in the MCP client's config (see below).
+2. A `.env` file in the directory the server is started from, or one of its parents. Useful for development inside this repository.
+3. **`~/.config/garmin-mcp/.env`** (`$XDG_CONFIG_HOME/garmin-mcp/.env` if that is set; `%APPDATA%\garmin-mcp\.env` on Windows). This is the recommended place. It works wherever the binary is and whichever directory the client starts it from, and it survives updates.
+4. A `.env` file next to the `garmin-mcp` binary.
 
-`.env` is git-ignored. Never commit your API key.
+To use the recommended place:
+
+```sh
+mkdir -p ~/.config/garmin-mcp
+echo 'GARMIN_API_KEY=<your-key>' > ~/.config/garmin-mcp/.env
+chmod 600 ~/.config/garmin-mcp/.env    # only you can read it
+```
+
+If no key is found, the server exits with `GARMIN_API_KEY is not set` and lists every place it looked.
+
+The repository's `.env` is git-ignored. Never commit your API key.
 
 ## Connecting a client
 
 ### Claude Code
 
-To make the server available in every project, passing the key directly:
+To make the server available in every project, with the key in `~/.config/garmin-mcp/.env`:
+
+```sh
+claude mcp add -s user garmin -- /path/to/garmin-mcp/target/release/garmin-mcp
+```
+
+Or pass the key directly instead:
 
 ```sh
 claude mcp add -s user garmin -e GARMIN_API_KEY=<your-key> -- /path/to/garmin-mcp/target/release/garmin-mcp
-```
-
-To use it only when Claude Code is started inside this repository (the key is read from `.env`):
-
-```sh
-claude mcp add garmin -- /path/to/garmin-mcp/target/release/garmin-mcp
 ```
 
 Check the connection with `claude mcp list`, or with `/mcp` inside a session. Then ask, for example, "What were my last 3 runs?" or "How did I sleep last night?"
@@ -93,14 +106,15 @@ Add the server to `~/Library/Application Support/Claude/claude_desktop_config.js
 {
   "mcpServers": {
     "garmin": {
-      "command": "/path/to/garmin-mcp/target/release/garmin-mcp",
-      "env": { "GARMIN_API_KEY": "<your-key>" }
+      "command": "/path/to/garmin-mcp/target/release/garmin-mcp"
     }
   }
 }
 ```
 
-With either client, a key passed this way is stored in plain text in the client's config file.
+Use the binary's full path: Claude Desktop doesn't use your shell's `PATH`. With the key in `~/.config/garmin-mcp/.env`, no `"env"` block is needed. To pass the key here instead, add `"env": { "GARMIN_API_KEY": "<your-key>" }`.
+
+With either client, a key passed in the client's config is stored there in plain text.
 
 ## How it works
 
@@ -127,7 +141,7 @@ cargo fmt                   # format
 ```
 src/
 ├── main.rs           entry point: loads config, starts the server on stdio
-├── config.rs         reads GARMIN_API_KEY / GARMIN_BASE_URL
+├── config.rs         reads GARMIN_API_KEY / GARMIN_BASE_URL from env vars and .env files
 ├── server.rs         MCP tools, one #[tool] method each (see the table above)
 └── garmin/
     ├── activity.rs         activity list entries (Activity)
