@@ -20,7 +20,7 @@ use serde::de::DeserializeOwned;
 use super::{
     activity::{Activity, ActivitySummary},
     activity_detail::{ActivityDetail, ActivityDetailSummary},
-    auth::TokenManager,
+    auth::{KeyCheck, TokenManager},
     body_battery::{BodyBatteryDay, BodyBatteryReport},
     daily_summary::{DailySummaries, DaySummary, UserDailySummary},
     fitness_age::{FitnessAge, FitnessAgeSummary},
@@ -122,6 +122,12 @@ impl GarminClient {
             http,
             base_url: config.base_url.clone(),
         })
+    }
+
+    /// Asks Garmin whether the configured API key works (used by
+    /// `garmin-mcp setup`). See [`TokenManager::check_key`].
+    pub async fn check_key(&self) -> anyhow::Result<KeyCheck> {
+        self.tokens.check_key().await
     }
 
     /// Lists activities matching `query`, newest first.

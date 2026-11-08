@@ -52,6 +52,14 @@ impl CachedToken {
     }
 }
 
+/// What Garmin said about an API key (see [`TokenManager::check_key`]).
+pub enum KeyCheck {
+    /// Garmin issued a token: the key works.
+    Valid,
+    /// Garmin answered with this error status instead.
+    Rejected(reqwest::StatusCode),
+}
+
 /// Gets bearer tokens from Garmin and keeps the current one in memory.
 ///
 /// Safe to share between concurrent tool calls: the cache sits behind a
@@ -128,12 +136,29 @@ impl TokenManager {
         }
     }
 
-    /// Calls the token endpoint and returns the token text.
-    async fn fetch_token(&self) -> anyhow::Result<String> {
+    /// Asks Garmin whether the API key works, without caching anything.
+    /// Used by `garmin-mcp setup` before it saves a key.
+    ///
+    /// Returns `Ok(Valid)` or `Ok(Rejected(status))` when Garmin answered,
+    /// and an error when it couldn't be reached. Found by probing: an unknown
+    /// key gets 401, an empty one 400.
+    pub async fn check_key(&self) -> anyhow::Result<KeyCheck> {
+        let status = self.send_token_request().await?.status();
+        // `if` is an expression in Rust: it produces the value of the branch
+        // that runs, which becomes the function's return value.
+        Ok(if status.is_success() {
+            KeyCheck::Valid
+        } else {
+            KeyCheck::Rejected(status)
+        })
+    }
+
+    /// Sends the token request and returns Garmin's response, whatever its
+    /// status. Errors only on network problems.
+    async fn send_token_request(&self) -> anyhow::Result<reqwest::Response> {
         // Build and send the request. Each method returns a modified request
         // builder; `.send()` starts it and `.await` waits for the response.
-        let response = self
-            .http
+        self.http
             .post(&self.token_url)
             .header(
                 reqwest::header::AUTHORIZATION,
@@ -141,7 +166,12 @@ impl TokenManager {
             )
             .send()
             .await
-            .context("token request failed (network error)")?;
+            .context("token request failed (network error)")
+    }
+
+    /// Calls the token endpoint and returns the token text.
+    async fn fetch_token(&self) -> anyhow::Result<String> {
+        let response = self.send_token_request().await?;
 
         let status = response.status();
         if !status.is_success() {

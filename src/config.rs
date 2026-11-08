@@ -58,10 +58,7 @@ impl Config {
     /// Returns an error if no `GARMIN_API_KEY` is found anywhere, so the
     /// server stops at startup instead of failing on the first tool call.
     pub fn from_env() -> anyhow::Result<Self> {
-        // `|name| env::var(name).ok()` is a closure (an inline anonymous
-        // function). `env::var` returns `Result<String, VarError>`; `.ok()`
-        // turns it into an `Option<String>` (`None` if unset).
-        Self::resolve(|name| env::var(name).ok(), &env_files())
+        Self::resolve(real_env_var, &env_files())
     }
 
     /// Does the actual lookup. `env_var` reads one environment variable and
@@ -77,52 +74,135 @@ impl Config {
         env_var: impl Fn(&str) -> Option<String>,
         files: &[PathBuf],
     ) -> anyhow::Result<Self> {
-        // Read every file once, up front. Missing files give empty lists.
-        // `.map(|path| read_env_file(path))` can be written as just
-        // `.map(read_env_file)` because the function has the right shape.
-        let contents: Vec<Vec<(String, String)>> =
-            files.iter().map(|path| read_env_file(path)).collect();
+        let sources = Sources::new(env_var, files);
 
-        // Finds one setting. A closure can use variables around it, here
-        // `env_var` and `contents`; it borrows them, so they stay usable.
-        let lookup = |name: &str| -> Option<String> {
-            // Removes surrounding spaces (easy to paste by accident) and
-            // treats an empty value as missing.
-            let clean = |value: &str| {
-                let value = value.trim();
-                (!value.is_empty()).then(|| value.to_string())
-            };
-            // `and_then` runs `clean` only if the variable is set.
-            // `or_else` runs its closure only if the result so far is `None`:
-            // then each file is searched in order. `.flatten()` walks through
-            // the pairs of every file as one long list.
-            env_var(name).and_then(|value| clean(&value)).or_else(|| {
-                contents
-                    .iter()
-                    .flatten()
-                    .filter(|(key, _)| key == name)
-                    .find_map(|(_, value)| clean(value))
-            })
-        };
-
+        // `.map(|(value, _)| value)` keeps the value and drops where it came
+        // from (`_` ignores a part when destructuring a tuple).
         // `.with_context(|| ...)` turns `None` into an error, building the
         // message only when needed; `?` returns that error early.
-        let api_key = lookup("GARMIN_API_KEY").with_context(|| missing_key_message(files))?;
-
-        // A missing base URL falls back to the default.
-        // `.unwrap_or_else(...)` calls the closure only when the value is
-        // `None`; `.to_string()` turns the `&str` constant into an owned
-        // `String`.
-        let base_url = lookup("GARMIN_BASE_URL").unwrap_or_else(|| DEFAULT_BASE_URL.to_string());
+        let api_key = sources
+            .find("GARMIN_API_KEY")
+            .map(|(value, _)| value)
+            .with_context(|| missing_key_message(files))?;
 
         Ok(Self {
-            // Strip a trailing `/` so we can always build URLs as
-            // `format!("{base_url}{path}")` with `path` starting with `/`.
-            base_url: base_url.trim_end_matches('/').to_string(),
+            base_url: sources.base_url(),
             // Field init shorthand: `api_key` means `api_key: api_key`.
             api_key,
         })
     }
+}
+
+/// Where a setting's value was found. Used by `garmin-mcp setup` to warn
+/// when another key takes priority over the one it saved.
+#[derive(Debug, PartialEq)]
+pub enum Source {
+    /// A real environment variable, with its name.
+    EnvVar(&'static str),
+    /// A `.env` file.
+    File(PathBuf),
+}
+
+/// How a [`Source`] is shown to the user, e.g. in "the key from ... takes
+/// priority". Implementing `Display` is what makes `{source}` work in
+/// `format!` and `eprintln!`.
+impl fmt::Display for Source {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        // `match` on `self` picks the branch for the variant we have, and
+        // binds its contents (`name`, `path`) to variables.
+        match self {
+            Source::EnvVar(name) => write!(f, "the {name} environment variable"),
+            Source::File(path) => write!(f, "{}", path.display()),
+        }
+    }
+}
+
+/// Where the API key would currently be read from, or `None` if there is
+/// none. The key itself is not returned.
+pub fn api_key_source() -> Option<Source> {
+    Sources::new(real_env_var, &env_files())
+        .find("GARMIN_API_KEY")
+        .map(|(_, source)| source)
+}
+
+/// The base URL the server would currently use (`GARMIN_BASE_URL` or the
+/// default). Lets `garmin-mcp setup` check a key before one is saved.
+pub fn base_url() -> String {
+    Sources::new(real_env_var, &env_files()).base_url()
+}
+
+/// Reads a real environment variable. `env::var` returns
+/// `Result<String, VarError>`; `.ok()` turns it into an `Option<String>`
+/// (`None` if unset).
+fn real_env_var(name: &str) -> Option<String> {
+    env::var(name).ok()
+}
+
+/// Every place settings are read from, with the `.env` files already parsed.
+///
+/// `<F>` makes the struct *generic*: `F` stands for whatever function type is
+/// passed in as `env_var` (a real lookup or a test closure). The `where`
+/// clause on the `impl` says what `F` must be able to do.
+struct Sources<F> {
+    env_var: F,
+    /// Each file's path with its `KEY=value` pairs, in priority order.
+    files: Vec<(PathBuf, Vec<(String, String)>)>,
+}
+
+impl<F> Sources<F>
+where
+    F: Fn(&str) -> Option<String>,
+{
+    /// Reads every file once, up front. Missing files give empty lists.
+    fn new(env_var: F, paths: &[PathBuf]) -> Self {
+        let files = paths
+            .iter()
+            .map(|path| (path.clone(), read_env_file(path)))
+            .collect();
+        Self { env_var, files }
+    }
+
+    /// The first non-empty value of setting `name`, and where it was found:
+    /// the environment variable first, then each file in order.
+    fn find(&self, name: &'static str) -> Option<(String, Source)> {
+        // `(self.env_var)(name)` calls the function stored in the field (the
+        // parentheses tell Rust it's a field, not a method named `env_var`).
+        // `and_then` runs `clean` only if the variable is set.
+        if let Some(value) = (self.env_var)(name).and_then(|value| clean(&value)) {
+            return Some((value, Source::EnvVar(name)));
+        }
+        // `find_map` returns the first `Some` the closure produces. The
+        // outer one walks the files, the inner one that file's pairs.
+        self.files.iter().find_map(|(path, pairs)| {
+            pairs
+                .iter()
+                .filter(|(key, _)| key == name)
+                .find_map(|(_, value)| clean(value))
+                .map(|value| (value, Source::File(path.clone())))
+        })
+    }
+
+    /// `GARMIN_BASE_URL`, or the default when it isn't set.
+    fn base_url(&self) -> String {
+        // `.unwrap_or_else(...)` calls the closure only when the value is
+        // `None`; `.to_string()` turns the `&str` constant into an owned
+        // `String`.
+        let url = self
+            .find("GARMIN_BASE_URL")
+            .map(|(value, _)| value)
+            .unwrap_or_else(|| DEFAULT_BASE_URL.to_string());
+        // Strip a trailing `/` so we can always build URLs as
+        // `format!("{base_url}{path}")` with `path` starting with `/`.
+        url.trim_end_matches('/').to_string()
+    }
+}
+
+/// Removes surrounding spaces (easy to paste by accident) and treats an
+/// empty value as missing.
+fn clean(value: &str) -> Option<String> {
+    let value = value.trim();
+    // `bool::then` gives `Some(...)` when the condition is true, else `None`.
+    (!value.is_empty()).then(|| value.to_string())
 }
 
 /// This app's folder inside the user's config folder, e.g.
@@ -250,7 +330,8 @@ fn missing_key_message(files: &[PathBuf]) -> String {
         .map(|dir| dir.join(".env").display().to_string())
         .unwrap_or_else(|| "~/.config/garmin-mcp/.env".to_string());
     message.push_str(&format!(
-        "\nAdd a line GARMIN_API_KEY=<your key> to {suggested}, or pass it in the MCP client config."
+        "\nRun `garmin-mcp setup` to save your key to {suggested}, \
+         or pass GARMIN_API_KEY in the MCP client config."
     ));
     message
 }
@@ -313,6 +394,22 @@ mod tests {
         // Spaces are trimmed; the trailing `/` of the URL is removed.
         assert_eq!(config.api_key, "second");
         assert_eq!(config.base_url, "http://localhost:9000");
+    }
+
+    #[test]
+    fn find_reports_where_the_value_came_from() {
+        let file = temp_env_file("source", "GARMIN_API_KEY=from-file\n");
+        let from_file = Sources::new(no_env, std::slice::from_ref(&file));
+        assert_eq!(
+            from_file.find("GARMIN_API_KEY"),
+            Some(("from-file".to_string(), Source::File(file.clone())))
+        );
+        let env = |_: &str| Some("from-env".to_string());
+        let from_env = Sources::new(env, &[file]);
+        assert_eq!(
+            from_env.find("GARMIN_API_KEY"),
+            Some(("from-env".to_string(), Source::EnvVar("GARMIN_API_KEY")))
+        );
     }
 
     #[test]

@@ -18,6 +18,10 @@
 mod config;
 mod garmin;
 mod server;
+mod setup;
+
+// `IsTerminal` adds `.is_terminal()` to stdin/stdout/stderr.
+use std::io::IsTerminal;
 
 // `use` brings names into scope so we can write `stdio()` instead of
 // `rmcp::transport::stdio()`.
@@ -33,7 +37,19 @@ use rmcp::{ServiceExt, transport::stdio};
 // `GarminServer` struct defined in `src/server.rs`.
 use crate::{config::Config, garmin::GarminClient, server::GarminServer};
 
-/// Starts the MCP server and keeps it running until the client disconnects.
+/// Help text for `garmin-mcp --help`.
+const USAGE: &str = "\
+garmin-mcp: an MCP server that gives AI apps access to your Garmin Connect data.
+
+Usage:
+  garmin-mcp            run the MCP server on stdin/stdout (your AI app starts it)
+  garmin-mcp setup      save your Garmin API key, then show how to add the server
+  garmin-mcp --version  print the version
+  garmin-mcp --help     print this help";
+
+/// Picks what to do from the command-line arguments: run the MCP server
+/// (no arguments, which is how MCP clients start it) or one of the commands
+/// a person runs in a terminal.
 ///
 /// `#[tokio::main]` is an *attribute macro*. Rust's `main` function cannot be
 /// `async` on its own, because something has to drive async code. The macro
@@ -46,11 +62,46 @@ use crate::{config::Config, garmin::GarminClient, server::GarminServer};
 /// error, Rust prints it and exits with a non-zero status code.
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
+    // `args()` yields the program name first, then each argument;
+    // `.nth(1)` is the first argument, if any. `.as_deref()` turns
+    // `Option<String>` into `Option<&str>` so it can be matched against
+    // string literals. `"a" | "b"` matches either one.
+    // Output goes to stderr even here, so stdout is only ever used by MCP.
+    match std::env::args().nth(1).as_deref() {
+        None => serve().await,
+        Some("setup") => setup::run().await,
+        Some("--version" | "-V") => {
+            // `env!` reads a value at compile time; Cargo sets
+            // `CARGO_PKG_VERSION` from `version` in `Cargo.toml`.
+            eprintln!("garmin-mcp {}", env!("CARGO_PKG_VERSION"));
+            Ok(())
+        }
+        Some("--help" | "-h" | "help") => {
+            eprintln!("{USAGE}");
+            Ok(())
+        }
+        Some(other) => anyhow::bail!("unknown command `{other}`\n\n{USAGE}"),
+    }
+}
+
+/// Starts the MCP server and keeps it running until the client disconnects.
+async fn serve() -> anyhow::Result<()> {
     // stdout carries the MCP protocol; log to stderr only.
     // `eprintln!` (note the `e`) prints to stderr. Using `println!` here would
     // write garbage into the protocol stream and break the client.
     // The `!` means `eprintln!` is a macro, not a regular function.
     eprintln!("garmin-mcp starting on stdio");
+
+    // Someone ran `garmin-mcp` by hand in a terminal (an MCP client would
+    // connect stdin to a pipe instead). The server would just sit there
+    // silently, so say what it is. `is_terminal` comes from the
+    // `IsTerminal` trait.
+    if std::io::stdin().is_terminal() {
+        eprintln!(
+            "This is an MCP server: your AI app starts it. To save your Garmin API key, \
+             run `garmin-mcp setup`. Press Ctrl+C to quit."
+        );
+    }
 
     // Read settings (API key, base URL) before serving anything. If the key
     // is missing, `?` stops the program here with a clear error message

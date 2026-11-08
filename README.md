@@ -48,11 +48,15 @@ Garmin filters by sport group, not by exact type:
 ```sh
 git clone git@github.com:gpodliegaiev/garmin-mcp.git
 cd garmin-mcp
-cp .env.example .env    # then set GARMIN_API_KEY in .env
 cargo build --release
+target/release/garmin-mcp setup
 ```
 
 The binary is written to `target/release/garmin-mcp`. Rebuild after pulling changes.
+
+`garmin-mcp setup` asks for your API key, without showing it on screen, and checks it with Garmin. It then saves the key to `~/.config/garmin-mcp/.env`, readable only by you, and prints the exact commands to add the server to Claude Code and Claude Desktop. Run it again to replace the key.
+
+Other commands: `garmin-mcp --help` and `garmin-mcp --version`. Without arguments, the binary is the MCP server; your AI app starts it.
 
 ### Configuration
 
@@ -68,7 +72,7 @@ The server looks for each variable in these places, in order, and uses the first
 3. **`~/.config/garmin-mcp/.env`** (`$XDG_CONFIG_HOME/garmin-mcp/.env` if that is set; `%APPDATA%\garmin-mcp\.env` on Windows). This is the recommended place. It works wherever the binary is and whichever directory the client starts it from, and it survives updates.
 4. A `.env` file next to the `garmin-mcp` binary.
 
-To use the recommended place:
+`garmin-mcp setup` writes the recommended place for you. To write it by hand instead:
 
 ```sh
 mkdir -p ~/.config/garmin-mcp
@@ -140,8 +144,9 @@ cargo fmt                   # format
 
 ```
 src/
-├── main.rs           entry point: loads config, starts the server on stdio
+├── main.rs           entry point: runs the server on stdio, or `setup` / `--help` / `--version`
 ├── config.rs         reads GARMIN_API_KEY / GARMIN_BASE_URL from env vars and .env files
+├── setup.rs          `garmin-mcp setup`: checks and saves the API key
 ├── server.rs         MCP tools, one #[tool] method each (see the table above)
 └── garmin/
     ├── activity.rs         activity list entries (Activity)
