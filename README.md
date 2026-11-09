@@ -62,6 +62,12 @@ The installer downloads the right build for your system and puts `garmin-mcp` an
 
 Builds exist for macOS (Apple Silicon and Intel), Linux x86_64 and Windows x86_64. You can also download an archive from the [releases page](https://github.com/gpodliegaiev/garmin-mcp/releases) and put the binary anywhere. On macOS, a binary downloaded with a browser is blocked by Gatekeeper the first time; allow it with `xattr -d com.apple.quarantine garmin-mcp`. The installer doesn't have this problem.
 
+Every release archive has a signed build attestation. To check that a downloaded archive was built from this repository by its release workflow, run (with the [GitHub CLI](https://cli.github.com)):
+
+```sh
+gh attestation verify garmin-mcp-aarch64-apple-darwin.tar.gz -R gpodliegaiev/garmin-mcp
+```
+
 ### 2. Save your API key
 
 ```sh
