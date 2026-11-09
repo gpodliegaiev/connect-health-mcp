@@ -2,6 +2,8 @@
 
 An [MCP](https://modelcontextprotocol.io) server, written in Rust, that gives AI assistants such as Claude, ChatGPT (desktop app and Codex) and Gemini CLI read access to your Garmin Connect data through the [Garmin Connect personal API](https://developer.garmin.com/gc-developer-program/personal/personal-api/).
 
+> **Unofficial project.** garmin-mcp is independent open-source software. It is not affiliated with, endorsed by or supported by Garmin Ltd. or its subsidiaries. Garmin and Garmin Connect are trademarks of Garmin Ltd. or its subsidiaries. You need your own Garmin personal API key, and your use of the API is subject to Garmin's terms.
+
 ## Tools
 
 | Tool | What it returns | Arguments |

@@ -2,7 +2,7 @@
 name = "garmin-mcp"
 version = "0.2.0"
 edition = "2024"
-description = "MCP server that lets an AI read your Garmin Connect training and health data"
+description = "Unofficial MCP server that lets an AI read your Garmin Connect training and health data"
 repository = "https://github.com/gpodliegaiev/garmin-mcp"
 homepage = "https://github.com/gpodliegaiev/garmin-mcp"
 readme = "README.md"
