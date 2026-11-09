@@ -112,7 +112,7 @@ Every tool must return **all useful fields** Garmin sends, so the AI can do a fu
 
 ## Garmin API reference
 
-Local copy of Garmin's swagger docs (the online page renders client-side and can't be fetched as a spec):
+Local copy of Garmin's swagger docs (the online page renders client-side and can't be fetched as a spec). Both files are Garmin's and git-ignored; never commit them. If missing, run `python3 docs/update_garmin_spec.py`.
 
 - `docs/garmin-api.md`: endpoint index with params, response schema names, and implementation status (✅, MCP tool, `GarminClient` method), found by scanning `src/` for endpoint paths. Check it first when adding a tool or param.
 - `docs/garmin-openapi.json`: full OpenAPI 3.0 spec, including response schemas (`components.schemas`, e.g. `SummarizedActivityDTO`, `DailySleepDTO`).

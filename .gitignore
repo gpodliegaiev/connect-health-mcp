@@ -5,3 +5,8 @@
 
 # macOS Finder metadata
 .DS_Store
+
+# Garmin's API docs belong to Garmin and are not redistributed here.
+# Download them with `python3 docs/update_garmin_spec.py`.
+/docs/garmin-openapi.json
+/docs/garmin-api.md

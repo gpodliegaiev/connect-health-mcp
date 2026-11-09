@@ -278,11 +278,11 @@ Releases are built by [cargo-dist](https://github.com/axodotdev/cargo-dist) in G
 
 ### Garmin API docs
 
-`docs/` holds a local copy of Garmin's [swagger docs](https://developer.garmin.com/gc-developer-program/personal/swagger-docs/):
-- `garmin-api.md`: a readable index of every endpoint, marking which ones this server implements and the MCP tool for each.
-- `garmin-openapi.json`: the full OpenAPI spec.
+Garmin's [swagger docs](https://developer.garmin.com/gc-developer-program/personal/swagger-docs/) belong to Garmin and are not included in this repository. To get a local copy, run `python3 docs/update_garmin_spec.py`. It writes two git-ignored files:
+- `docs/garmin-api.md`: a readable index of every endpoint, marking which ones this server implements and the MCP tool for each.
+- `docs/garmin-openapi.json`: the full OpenAPI spec.
 
-To refresh both, run `python3 docs/update_garmin_spec.py`. After adding a tool, run it with `--offline` to update only the implementation status from the local spec.
+After adding a tool, run it with `--offline` to update only the implementation status from the local spec.
 
 ## License
 
