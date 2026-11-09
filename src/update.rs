@@ -34,6 +34,10 @@ use crate::config;
 const LATEST_RELEASE_URL: &str =
     "https://api.github.com/repos/gpodliegaiev/garmin-mcp/releases/latest";
 
+/// Start of a release page's URL; the version is appended (see
+/// [`release_url`]).
+const RELEASE_PAGE_PREFIX: &str = "https://github.com/gpodliegaiev/garmin-mcp/releases/tag/v";
+
 /// Check GitHub at most this often.
 const CHECK_INTERVAL: Duration = Duration::from_secs(24 * 60 * 60);
 
@@ -95,12 +99,16 @@ pub fn spawn_check(notice: Arc<UpdateNotice>) {
 
 /// The latest release, as GitHub returns it (only the fields we need) and
 /// as it is cached.
+///
+/// Only the tag is read, and it is only used after parsing it as a version.
+/// No other text from GitHub (such as the release page URL) is put into the
+/// note: the note goes to the AI, so anything in it could act as an
+/// instruction. Serde ignores fields not listed here, so cache files written
+/// by older versions (which also stored `html_url`) still load.
 #[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
 struct Release {
     /// The git tag, e.g. `v0.2.0`.
     tag_name: String,
-    /// The release page, with its notes.
-    html_url: String,
 }
 
 /// Contents of `update-check.json`.
@@ -150,11 +158,15 @@ async fn check() -> Option<String> {
     let release = release?;
     let latest = newer_version(CURRENT_VERSION, &release.tag_name)?;
     let exe = std::env::current_exe().ok()?;
-    Some(note_text(
-        &latest,
-        &update_command(&exe, &release.html_url),
-        &release.html_url,
-    ))
+    let url = release_url(&latest);
+    Some(note_text(&latest, &update_command(&exe, &url), &url))
+}
+
+/// The release page for `version`, built from our own constant. A parsed
+/// `Version` prints only digits, dots, letters and `-`/`+`, so the URL can't
+/// carry anything unexpected.
+fn release_url(version: &Version) -> String {
+    format!("{RELEASE_PAGE_PREFIX}{version}")
 }
 
 /// Asks GitHub for the latest release. `Ok(None)` if there is none yet (or
@@ -227,12 +239,14 @@ fn update_command(exe: &Path, release_url: &str) -> String {
     }
 }
 
-/// The note added to a tool result.
+/// The note added to a tool result. It ends by telling the AI not to run the
+/// update itself: an agent with shell access might otherwise run the
+/// suggested command without asking the user.
 fn note_text(latest: &Version, how: &str, release_url: &str) -> String {
     format!(
         "Note from the garmin-mcp server (not Garmin data): garmin-mcp {latest} is available \
          (installed: {CURRENT_VERSION}). To update, {how}, then restart the AI app. \
-         Release notes: {release_url}. Please let the user know."
+         Release notes: {release_url}. Tell the user about it; do not run the update yourself."
     )
 }
 
@@ -311,7 +325,6 @@ mod tests {
             checked_at: 42,
             release: Some(Release {
                 tag_name: "v0.2.0".to_string(),
-                html_url: "https://example.com".to_string(),
             }),
         };
         write_cache(&path, &cache).unwrap();
@@ -357,5 +370,21 @@ mod tests {
         assert!(note.contains("garmin-mcp 9.9.9 is available"));
         assert!(note.contains(&format!("installed: {CURRENT_VERSION}")));
         assert!(note.contains("To update, run `x`, then restart the AI app."));
+        assert!(note.ends_with("do not run the update yourself."));
+    }
+
+    #[test]
+    fn release_url_is_built_from_the_version() {
+        assert_eq!(
+            release_url(&Version::new(0, 3, 0)),
+            "https://github.com/gpodliegaiev/garmin-mcp/releases/tag/v0.3.0"
+        );
+    }
+
+    #[test]
+    fn old_cache_with_html_url_still_loads() {
+        let old = r#"{"checked_at":1,"release":{"tag_name":"v0.2.0","html_url":"https://x"}}"#;
+        let cache: Cache = serde_json::from_str(old).unwrap();
+        assert_eq!(cache.release.unwrap().tag_name, "v0.2.0");
     }
 }
