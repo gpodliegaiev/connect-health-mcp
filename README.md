@@ -229,7 +229,15 @@ At startup, the server asks GitHub for the latest release, at most once a day. I
 
 Then restart your AI app. Nothing is updated automatically.
 
-The check runs in the background and never slows down a tool call. If GitHub can't be reached, nothing happens. The time of the last check is stored in `~/.config/garmin-mcp/update-check.json`. To turn the check off, set `GARMIN_MCP_NO_UPDATE_CHECK=1` in the environment or in `~/.config/garmin-mcp/.env`.
+The check runs in the background and never slows down a tool call. If GitHub can't be reached, nothing happens. It is a plain request to GitHub's public API, so GitHub sees your IP address and a `garmin-mcp/<version>` User-Agent; no Garmin data or key is sent. The time of the last check is stored in `~/.config/garmin-mcp/update-check.json`. To turn the check off, set `GARMIN_MCP_NO_UPDATE_CHECK=1` in the environment or in `~/.config/garmin-mcp/.env`.
+
+## Privacy and disclaimer
+
+- **Your Garmin data goes only from Garmin to your AI app.** garmin-mcp runs on your computer, requests your data from Garmin's API when a tool is called, and returns it to the AI app that started it. It doesn't store the data or send it anywhere else.
+- **Your AI provider receives what the tools return.** The AI app sends tool results to its model provider (Anthropic, OpenAI, Google, ...) as part of the conversation, under that provider's terms. This includes health data such as heart rate, HRV, sleep, weight and body composition. Choose your provider and its data settings with that in mind.
+- **What is stored locally:** only your API key (`~/.config/garmin-mcp/.env`, readable only by your user when written by `garmin-mcp setup`) and the time of the last update check.
+- **Network connections:** Garmin's API (`personal.connectapi.garmin.com`) and, once a day, GitHub's API for the update check (see [Updates](#updates)). Nothing else.
+- **Not medical advice.** The data and anything an AI concludes from it are for information only. garmin-mcp is provided as is, without warranty of any kind (see [LICENSE](LICENSE)).
 
 ## Development
 

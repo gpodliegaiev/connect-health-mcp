@@ -278,6 +278,12 @@ fn print_next_steps() {
         "\nA key passed in the app's config (`-e GARMIN_API_KEY=...` or an \"env\" block) \
          takes priority over the saved one."
     );
+    // Say up front that the server contacts GitHub, so it isn't a surprise.
+    eprintln!(
+        "\nThe server checks GitHub for a newer version once a day (this sends your IP address \
+         and the version number, no Garmin data). To turn it off, add \
+         GARMIN_MCP_NO_UPDATE_CHECK=1 to the saved .env file."
+    );
 }
 
 /// Quotes a path for pasting into a shell, if it needs it.
