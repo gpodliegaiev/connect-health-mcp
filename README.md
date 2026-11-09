@@ -223,7 +223,6 @@ At startup, the server asks GitHub for the latest release, at most once a day. I
 
 | Installed with | Update command |
 |---|---|
-| Homebrew | `brew upgrade garmin-mcp` |
 | The install script | `garmin-mcp-update` |
 | Built from source | `git pull`, then `cargo build --release` |
 | Downloaded by hand | download the new release and replace the binary |

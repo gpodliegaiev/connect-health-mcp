@@ -213,7 +213,6 @@ fn newer_version(current: &str, tag: &str) -> Option<Version> {
 
 /// How to update, depending on how this binary was installed, judged from
 /// its path:
-/// - Homebrew keeps binaries under `.../Cellar/...`.
 /// - The `curl | sh` installer puts `garmin-mcp-update` next to it.
 /// - A binary under `target/release` or `target/debug` was built from source.
 /// - Otherwise it was downloaded by hand.
@@ -225,9 +224,7 @@ fn update_command(exe: &Path, release_url: &str) -> String {
         .map(|name| dir.join(name))
         .find(|candidate| candidate.is_file());
 
-    if path.contains("/Cellar/") {
-        "run `brew upgrade garmin-mcp`".to_string()
-    } else if let Some(updater) = updater {
+    if let Some(updater) = updater {
         format!("run `{}`", updater.display())
     } else if path.contains("/target/release/") || path.contains("/target/debug/") {
         "pull the latest code and run `cargo build --release`".to_string()
@@ -335,13 +332,6 @@ mod tests {
     #[test]
     fn command_depends_on_install_method() {
         let url = "https://example.com/release";
-        assert_eq!(
-            update_command(
-                Path::new("/opt/homebrew/Cellar/garmin-mcp/0.1.0/bin/garmin-mcp"),
-                url
-            ),
-            "run `brew upgrade garmin-mcp`"
-        );
         assert_eq!(
             update_command(
                 Path::new("/home/me/garmin-mcp/target/release/garmin-mcp"),
