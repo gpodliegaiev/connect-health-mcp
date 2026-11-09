@@ -33,6 +33,11 @@ use super::{
 };
 use crate::config::Config;
 
+/// Root of every Garmin API URL. Fixed on purpose: the API key and bearer
+/// token are sent here, so it must not be configurable (a `.env` file in a
+/// cloned project could otherwise redirect them to another server).
+const BASE_URL: &str = "https://personal.connectapi.garmin.com";
+
 /// Query parameters for the activity search endpoint, in Garmin's units.
 ///
 /// `Serialize` lets reqwest turn it into URL parameters. `camelCase` gives
@@ -96,8 +101,6 @@ const SLEEP_RANGE_PATH: &str = "/sleep-service/sleep/dailySleepSummariesByDate";
 pub struct GarminClient {
     /// Connection pool used for every request.
     http: reqwest::Client,
-    /// Root URL, e.g. `https://personal.connectapi.garmin.com`.
-    base_url: String,
     /// Provides (and caches) the bearer token.
     tokens: TokenManager,
 }
@@ -118,9 +121,8 @@ impl GarminClient {
         Ok(Self {
             // `http.clone()` gives the token manager its own handle to the
             // same connection pool.
-            tokens: TokenManager::new(http.clone(), &config.base_url, config.api_key.clone()),
+            tokens: TokenManager::new(http.clone(), BASE_URL, config.api_key.clone()),
             http,
-            base_url: config.base_url.clone(),
         })
     }
 
@@ -424,7 +426,7 @@ impl GarminClient {
         token: &str,
     ) -> anyhow::Result<reqwest::Response> {
         self.http
-            .get(format!("{}{path}", self.base_url))
+            .get(format!("{BASE_URL}{path}"))
             .query(query)
             // `bearer_auth` sets `Authorization: Bearer <token>`.
             .bearer_auth(token)

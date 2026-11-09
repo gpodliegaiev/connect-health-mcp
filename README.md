@@ -96,7 +96,6 @@ Delete `garmin-mcp` and `garmin-mcp-update` from `~/.local/bin`, and the folder 
 | Variable | Required | Default |
 |---|---|---|
 | `GARMIN_API_KEY` | yes | none |
-| `GARMIN_BASE_URL` | no | `https://personal.connectapi.garmin.com` |
 | `GARMIN_MCP_NO_UPDATE_CHECK` | no | unset (set to `1` to turn off the update check, see [Updates](#updates)) |
 
 The server looks for each variable in these places, in order, and uses the first value it finds:
@@ -246,7 +245,7 @@ cargo fmt                   # format
 ```
 src/
 ├── main.rs           entry point: runs the server on stdio, or `setup` / `--help` / `--version`
-├── config.rs         reads GARMIN_API_KEY / GARMIN_BASE_URL from env vars and .env files
+├── config.rs         reads GARMIN_API_KEY from env vars and .env files
 ├── setup.rs          `garmin-mcp setup`: checks and saves the API key
 ├── update.rs         checks GitHub for a newer release and adds a note to a tool result
 ├── server.rs         MCP tools, one #[tool] method each (see the table above)

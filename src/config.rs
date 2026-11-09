@@ -1,7 +1,9 @@
 //! Runtime configuration, read from environment variables and `.env` files.
 //!
-//! Settings: `GARMIN_API_KEY` (required), `GARMIN_BASE_URL` (optional) and
-//! `GARMIN_MCP_NO_UPDATE_CHECK` (optional, turns off the update check).
+//! Settings: `GARMIN_API_KEY` (required) and `GARMIN_MCP_NO_UPDATE_CHECK`
+//! (optional, turns off the update check). The Garmin API address is fixed
+//! in `garmin/client.rs`, not a setting: source 2 below can be a `.env` in
+//! any project the user opens, and must never be able to redirect the key.
 //!
 //! Each setting is looked up in this order; the first non-empty value wins:
 //! 1. A real environment variable, e.g. set in the MCP client's server
@@ -34,12 +36,9 @@ use std::{
 // `Option`, attaching a human-readable message to an error.
 use anyhow::Context;
 
-/// Base URL used when `GARMIN_BASE_URL` is not set.
+/// Name of this app's folder inside the user's config folder.
 // `const` is a compile-time constant. `&str` is a borrowed string slice; a
 // string literal like this one lives for the whole program (`'static`).
-const DEFAULT_BASE_URL: &str = "https://personal.connectapi.garmin.com";
-
-/// Name of this app's folder inside the user's config folder.
 const APP_DIR: &str = "garmin-mcp";
 
 /// Settings the server needs to talk to the Garmin API.
@@ -47,8 +46,6 @@ const APP_DIR: &str = "garmin-mcp";
 // API key. We write our own `Debug` below that hides it.
 #[derive(Clone)]
 pub struct Config {
-    /// Root of all API URLs, without a trailing slash.
-    pub base_url: String,
     /// Personal API key, sent as `Authorization: ApiKey <key>` to get a
     /// bearer token. Secret: never log it.
     pub api_key: String,
@@ -93,7 +90,6 @@ impl Config {
             .with_context(|| missing_key_message(files))?;
 
         Ok(Self {
-            base_url: sources.base_url(),
             // Field init shorthand: `api_key` means `api_key: api_key`.
             api_key,
             // `is_none_or` is `true` when the setting is missing or the
@@ -135,12 +131,6 @@ pub fn api_key_source() -> Option<Source> {
     Sources::new(real_env_var, &env_files())
         .find("GARMIN_API_KEY")
         .map(|(_, source)| source)
-}
-
-/// The base URL the server would currently use (`GARMIN_BASE_URL` or the
-/// default). Lets `garmin-mcp setup` check a key before one is saved.
-pub fn base_url() -> String {
-    Sources::new(real_env_var, &env_files()).base_url()
 }
 
 /// Reads a real environment variable. `env::var` returns
@@ -192,20 +182,6 @@ where
                 .find_map(|(_, value)| clean(value))
                 .map(|value| (value, Source::File(path.clone())))
         })
-    }
-
-    /// `GARMIN_BASE_URL`, or the default when it isn't set.
-    fn base_url(&self) -> String {
-        // `.unwrap_or_else(...)` calls the closure only when the value is
-        // `None`; `.to_string()` turns the `&str` constant into an owned
-        // `String`.
-        let url = self
-            .find("GARMIN_BASE_URL")
-            .map(|(value, _)| value)
-            .unwrap_or_else(|| DEFAULT_BASE_URL.to_string());
-        // Strip a trailing `/` so we can always build URLs as
-        // `format!("{base_url}{path}")` with `path` starting with `/`.
-        url.trim_end_matches('/').to_string()
     }
 }
 
@@ -361,7 +337,6 @@ impl fmt::Debug for Config {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         // `debug_struct` is a helper that prints `Config { field: value, .. }`.
         f.debug_struct("Config")
-            .field("base_url", &self.base_url)
             .field("api_key", &"***")
             .field("update_check", &self.update_check)
             .finish()
@@ -394,24 +369,19 @@ mod tests {
         let env = |name: &str| (name == "GARMIN_API_KEY").then(|| "from-env".to_string());
         let config = Config::resolve(env, &[file]).unwrap();
         assert_eq!(config.api_key, "from-env");
-        assert_eq!(config.base_url, DEFAULT_BASE_URL);
     }
 
     #[test]
     fn first_file_with_a_value_wins() {
         let missing = env::temp_dir().join("garmin-mcp-test-does-not-exist/.env");
         let empty = temp_env_file("first_empty", "GARMIN_API_KEY=\n");
-        let second = temp_env_file(
-            "first_second",
-            "# comment\nGARMIN_API_KEY=  second  \nGARMIN_BASE_URL=http://localhost:9000/\n",
-        );
+        let second = temp_env_file("first_second", "# comment\nGARMIN_API_KEY=  second  \n");
         let third = temp_env_file("first_third", "GARMIN_API_KEY=third\n");
         // An empty env var is treated as missing too.
         let env = |name: &str| (name == "GARMIN_API_KEY").then(String::new);
         let config = Config::resolve(env, &[missing, empty, second, third]).unwrap();
-        // Spaces are trimmed; the trailing `/` of the URL is removed.
+        // Spaces are trimmed.
         assert_eq!(config.api_key, "second");
-        assert_eq!(config.base_url, "http://localhost:9000");
     }
 
     #[test]
@@ -433,7 +403,7 @@ mod tests {
     #[test]
     fn missing_key_lists_every_place_checked() {
         let missing = env::temp_dir().join("garmin-mcp-test-does-not-exist/.env");
-        let other = temp_env_file("missing_other", "GARMIN_BASE_URL=http://x\n");
+        let other = temp_env_file("missing_other", "GARMIN_MCP_NO_UPDATE_CHECK=1\n");
         let error = Config::resolve(no_env, &[missing.clone(), other.clone()]).unwrap_err();
         let message = error.to_string();
         assert!(message.contains("the GARMIN_API_KEY environment variable"));

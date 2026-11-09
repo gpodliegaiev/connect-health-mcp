@@ -76,7 +76,6 @@ pub async fn run() -> anyhow::Result<()> {
     // `ln`) leaves the cursor on the line, so the result follows it.
     eprint!("Checking the key with Garmin... ");
     let config = Config {
-        base_url: config::base_url(),
         api_key: key.clone(),
         // Not used by the key check.
         update_check: false,
