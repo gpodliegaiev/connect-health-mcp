@@ -19,3 +19,6 @@ install-path = "~/.local/bin/"
 install-updater = true
 # Archive format for macOS and Linux (.tar.gz opens everywhere without extra tools)
 unix-archive = ".tar.gz"
+# Extra files in every archive. The licenses of the crates built into the
+# binary must ship with it (see about.toml for how to regenerate the file)
+include = ["THIRD-PARTY-LICENSES.html"]

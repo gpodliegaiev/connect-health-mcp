@@ -1,0 +1,35 @@
+# Config for `cargo about`, which writes THIRD-PARTY-LICENSES.html: the
+# license notices of every crate built into the release binaries.
+# Regenerate after changing dependencies:
+#   cargo about generate about.hbs -o THIRD-PARTY-LICENSES.html
+# It fails if a crate has a license missing from `accepted`; add it only after
+# checking it is compatible with shipping under MIT.
+
+# Licenses we may ship, in order of preference (for "A OR B" crates the first
+# accepted one is used).
+accepted = [
+    "MIT",
+    "Apache-2.0",
+    "Apache-2.0 WITH LLVM-exception",
+    "BSD-3-Clause",
+    "ISC",
+    "Zlib",
+    "Unicode-3.0",
+    "CDLA-Permissive-2.0",
+    "BSL-1.0",
+    "MIT-0",
+    "CC0-1.0",
+    "Unlicense",
+]
+
+# Only crates built for the release targets (see dist-workspace.toml).
+targets = [
+    "aarch64-apple-darwin",
+    "x86_64-apple-darwin",
+    "x86_64-unknown-linux-musl",
+    "x86_64-pc-windows-msvc",
+]
+
+# Leave out test-only and build-only crates: they are not in the binary.
+ignore-dev-dependencies = true
+ignore-build-dependencies = true
