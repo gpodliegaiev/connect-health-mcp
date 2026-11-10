@@ -42,9 +42,26 @@ Garmin filters by sport group, not by exact type:
 
 ## Install
 
-You need a Garmin Connect personal API key (see [Garmin's guide](https://developer.garmin.com/gc-developer-program/personal/personal-api/)).
+No programming knowledge is needed. You copy a few commands into a **terminal** (a window where you type commands instead of clicking), press Enter, and follow what it says. It takes about 5 minutes.
 
-### 1. Install the binary
+### Before you start
+
+- **A Garmin Connect personal API key.** It's a long code that lets garmin-mcp read your data. Create one by following [Garmin's guide](https://developer.garmin.com/gc-developer-program/personal/personal-api/), and keep the page with the key open: you'll paste it in step 2.
+- **An AI app that supports MCP**, such as Claude Desktop, Claude Code, the ChatGPT desktop app, Codex or Gemini CLI. The web and phone versions of ChatGPT, Claude and Gemini can't use garmin-mcp.
+
+### How to open a terminal and paste into it
+
+| System | Open a terminal | Paste |
+|---|---|---|
+| macOS | Press Cmd+Space, type `Terminal`, press Enter | Cmd+V |
+| Windows | Open the Start menu, type `PowerShell`, open **Windows PowerShell** | Ctrl+V, or right-click |
+| Linux | Usually Ctrl+Alt+T, or find **Terminal** in your apps | Ctrl+Shift+V |
+
+To run a command below, copy it (the copy button at the right of the box works), paste it into the terminal and press Enter. Wait until the terminal shows the prompt again (the line where you can type) before the next step.
+
+### 1. Install garmin-mcp
+
+Paste the command for your system and press Enter.
 
 macOS and Linux:
 
@@ -52,13 +69,18 @@ macOS and Linux:
 curl --proto '=https' --tlsv1.2 -LsSf https://github.com/gpodliegaiev/garmin-mcp/releases/latest/download/garmin-mcp-installer.sh | sh
 ```
 
-Windows (PowerShell):
+Windows:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -c "irm https://github.com/gpodliegaiev/garmin-mcp/releases/latest/download/garmin-mcp-installer.ps1 | iex"
 ```
 
-The installer downloads the right build for your system and puts `garmin-mcp` and `garmin-mcp-update` in `~/.local/bin` (`%USERPROFILE%\.local\bin` on Windows). If that folder isn't on your `PATH` yet, it adds it to your shell profile; open a new terminal afterwards. No Rust or other tools are needed.
+It downloads garmin-mcp from this project's GitHub releases and installs it for your user only (no administrator password needed), in the folder `~/.local/bin` (`%USERPROFILE%\.local\bin` on Windows). Nothing else, such as Rust or other developer tools, is needed.
+
+**When it says it's done, close the terminal window and open a new one.** The new window finds the `garmin-mcp` command; the old one may not.
+
+<details>
+<summary>Other ways to install (download by hand, check a download's signature)</summary>
 
 Builds exist for macOS (Apple Silicon and Intel), Linux x86_64 and Windows x86_64. You can also download an archive from the [releases page](https://github.com/gpodliegaiev/garmin-mcp/releases) and put the binary anywhere. On macOS, a binary downloaded with a browser is blocked by Gatekeeper the first time; allow it with `xattr -d com.apple.quarantine garmin-mcp`. The installer doesn't have this problem.
 
@@ -68,19 +90,64 @@ Every release archive has a signed build attestation. To check that a downloaded
 gh attestation verify garmin-mcp-aarch64-apple-darwin.tar.gz -R gpodliegaiev/garmin-mcp
 ```
 
+</details>
+
 ### 2. Save your API key
+
+In the new terminal window, run:
 
 ```sh
 garmin-mcp setup
 ```
 
-`setup` asks for your API key, without showing it on screen, and checks it with Garmin. It then saves the key to `~/.config/garmin-mcp/.env` (`%APPDATA%\garmin-mcp\.env` on Windows), readable only by you (on Windows the file keeps the permissions of `%APPDATA%`, which is private to your user by default), and prints the exact commands to add the server to Claude Code and Claude Desktop, with the binary's full path. Run it again to replace the key.
+When it asks for the key:
+
+1. Copy the key from Garmin's page.
+2. Click into the terminal window and paste it (Cmd+V on macOS, Ctrl+V or right-click on Windows, Ctrl+Shift+V on Linux).
+3. Press Enter.
+
+**Nothing appears while you paste, not even dots or stars.** That's normal: the key is hidden on purpose, so nobody can read it off your screen. Paste only once, then press Enter.
+
+`setup` then shows how many characters it received, checks the key with Garmin, and saves it on your computer, readable only by you (in `~/.config/garmin-mcp/.env`, or `%APPDATA%\garmin-mcp\.env` on Windows). If Garmin doesn't accept the key, nothing is saved: check that you copied the whole key and run `garmin-mcp setup` again. Run it again later, too, if you ever need to replace the key.
+
+At the end, `setup` prints what to add to Claude Code and Claude Desktop, with the right path for your computer. Keep the terminal open for step 3.
 
 ### 3. Connect your AI app
 
-Paste the command or config entry that `setup` printed (for Claude Code and Claude Desktop). For ChatGPT, Codex, Gemini CLI, Cursor, VS Code and others, see [Connecting a client](#connecting-a-client).
+**Claude Desktop:**
 
-Other commands: `garmin-mcp --help` and `garmin-mcp --version`. Without arguments, the binary is the MCP server; your AI app starts it.
+1. In Claude Desktop, open **Settings → Developer → Edit Config**. This shows a file named `claude_desktop_config.json`; open it in a text editor (TextEdit on macOS, Notepad on Windows).
+2. If the file is empty or contains only `{}`, replace everything in it with the block below. Instead of `/Users/<you>/.local/bin/garmin-mcp`, use the path that `setup` printed (keep the quotes).
+
+   ```json
+   {
+     "mcpServers": {
+       "garmin": {
+         "command": "/Users/<you>/.local/bin/garmin-mcp"
+       }
+     }
+   }
+   ```
+
+   If the file already has an `"mcpServers"` section, add only the `"garmin": { ... }` line that `setup` printed inside it, with a comma between it and the entry before it.
+3. Save the file, then quit Claude Desktop completely (Cmd+Q on macOS; on Windows, right-click the Claude icon near the clock and choose Quit) and open it again.
+
+**Claude Code:** copy the `claude mcp add ...` line that `setup` printed, paste it into the terminal and press Enter.
+
+**ChatGPT, Codex, Gemini CLI, Cursor, VS Code and others:** see [Connecting a client](#connecting-a-client).
+
+### 4. Try it
+
+Start a new chat and ask, for example, "How did I sleep last night?" or "What were my last 3 runs?". The first time, the app may ask whether garmin-mcp may run a tool: allow it.
+
+### If something goes wrong
+
+- **"command not found" or "garmin-mcp is not recognized"** after installing: close the terminal window and open a new one, then try again.
+- **Nothing happens when you paste the key:** that's expected, the key is hidden. Press Enter once.
+- **"Garmin did not accept this key":** copy the key again from Garmin's page, making sure you got all of it, and run `garmin-mcp setup` again.
+- **The AI app doesn't see your Garmin data:** check that the path in its config is the one `setup` printed, then quit the app completely and open it again.
+
+Other commands: `garmin-mcp --help` and `garmin-mcp --version`. You never need to start garmin-mcp yourself: your AI app starts it in the background when it needs your data.
 
 ### Build from source
 

@@ -36,6 +36,16 @@ const KEY_GUIDE_URL: &str =
 /// Name of the setting this command writes.
 const KEY_NAME: &str = "GARMIN_API_KEY";
 
+/// How to paste into a terminal on this system, for the key prompt. Only
+/// one of these three constants is compiled, picked by `#[cfg(...)]`:
+/// `target_os` is the system the binary is built for.
+#[cfg(target_os = "macos")]
+const PASTE_SHORTCUT: &str = "Cmd+V";
+#[cfg(windows)]
+const PASTE_SHORTCUT: &str = "Ctrl+V, or right-click";
+#[cfg(not(any(target_os = "macos", windows)))]
+const PASTE_SHORTCUT: &str = "Ctrl+Shift+V";
+
 /// Runs the whole setup. Returns an error (printed by `main`) if the key is
 /// rejected or the file can't be written.
 pub async fn run() -> anyhow::Result<()> {
@@ -64,13 +74,27 @@ pub async fn run() -> anyhow::Result<()> {
         return Ok(());
     }
 
+    // Hidden input shows nothing at all, not even `***`, which looks like a
+    // frozen terminal to someone who rarely uses one. So say beforehand
+    // what will (not) happen and how to paste.
+    eprintln!(
+        "Copy your key, paste it below ({}) and press Enter.",
+        PASTE_SHORTCUT
+    );
+    eprintln!(
+        "Nothing will appear while you paste or type: the key is hidden on purpose,\n\
+         so it never shows on screen. Paste once, then press Enter.\n"
+    );
     // `prompt_password` reads from the terminal with echo turned off.
-    let key = rpassword::prompt_password("Garmin personal API key (input hidden): ")
+    let key = rpassword::prompt_password("Garmin personal API key: ")
         .context("could not read the key from the terminal")?;
     // Shadowing: a new `key` variable replaces the old one, here with the
     // trimmed text.
     let key = key.trim().to_string();
     check_format(&key)?;
+    // Confirms the paste worked, without showing the key. The length helps
+    // spot a key that was cut off or pasted twice.
+    eprintln!("Got a key of {} characters.", key.chars().count());
 
     // Check the key with the same client the server uses. `eprint!` (no
     // `ln`) leaves the cursor on the line, so the result follows it.
@@ -142,7 +166,10 @@ fn has_key(content: &str) -> bool {
 /// quotes (usually a paste of more than the key).
 fn check_format(key: &str) -> anyhow::Result<()> {
     if key.is_empty() {
-        bail!("no key was entered");
+        bail!(
+            "no key was entered. Run `garmin-mcp setup` again, paste the key \
+             (nothing shows while you paste), then press Enter"
+        );
     }
     if key
         .chars()
