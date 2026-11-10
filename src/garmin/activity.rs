@@ -1346,19 +1346,20 @@ fn type_key<'de, D: Deserializer<'de>>(deserializer: D) -> Result<String, D::Err
 mod tests {
     use super::*;
 
-    /// Trimmed-down copy of a real strength-training entry from Garmin.
+    /// The shape of a real strength-training entry from Garmin (id and
+    /// values made up).
     // `r#"..."#` is a *raw string*: quotes inside need no escaping.
     const STRENGTH_JSON: &str = r#"{
-        "activityId": 24824822921,
+        "activityId": 1001,
         "activityName": "Leg day",
         "activityType": {"typeId": 13, "typeKey": "strength_training", "parentTypeId": 29},
         "eventType": {"typeId": 9, "typeKey": "uncategorized"},
         "startTimeLocal": "2026-10-23 13:24:21",
         "duration": 4239.2,
         "distance": 0.0,
-        "averageHR": 124.0,
-        "maxHR": 159.0,
-        "calories": 617.0,
+        "averageHR": 118.0,
+        "maxHR": 152.0,
+        "calories": 540.0,
         "totalSets": 24,
         "activeSets": 24,
         "totalReps": 285,
@@ -1389,7 +1390,7 @@ mod tests {
         let out = summary(STRENGTH_JSON);
         assert_eq!(out.activity_type, "strength_training");
         assert_eq!(out.duration_min, Some(70.65));
-        assert_eq!(out.average_hr, Some(124.0));
+        assert_eq!(out.average_hr, Some(118.0));
         assert_eq!(out.total_sets, Some(24));
         assert_eq!(out.total_reps, Some(285));
         // Distance 0 means "no distance", so all distance/speed fields are

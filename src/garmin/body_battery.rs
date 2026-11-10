@@ -206,7 +206,7 @@ mod tests {
 
     #[test]
     fn converts_levels_and_events() {
-        // A trimmed real day (Europe/Paris, UTC+1), `chunks=1`.
+        // The shape of a real day (values made up; Europe/Paris, UTC+1), `chunks=1`.
         let raw: BodyBatteryReport = serde_json::from_value(serde_json::json!({
             "date": "2026-10-26", "charged": 55, "drained": 71,
             "startTimestampGMT": "2026-10-25T23:00:00.0",

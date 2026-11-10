@@ -250,19 +250,20 @@ mod tests {
 
     #[test]
     fn suggestions_are_converted() {
-        // Real response for a day with suggestions (BMI, vigorous days).
+        // Shape of a real response (values made up) for a day with
+        // suggestions (BMI, vigorous days).
         let out = summary(serde_json::json!({
-            "chronologicalAge": 35,
-            "fitnessAge": 30.83807597434009,
-            "achievableFitnessAge": 29.340520234469633,
-            "previousFitnessAge": 30.83807597434009,
+            "chronologicalAge": 42,
+            "fitnessAge": 37.21640519334871,
+            "achievableFitnessAge": 35.73852016627045,
+            "previousFitnessAge": 37.21640519334871,
             "components": {
-                "vigorousDaysAvg": {"value": 2.5, "targetValue": 3, "potentialAge": 31.589901864459407,
+                "vigorousDaysAvg": {"value": 1.5, "targetValue": 3, "potentialAge": 38.44190276150832,
                                     "priority": 2, "stale": false, "numOfWeeksForIm": 6},
-                "rhr": {"value": 52, "stale": false},
-                "vigorousMinutesAvg": {"value": 89.3, "stale": false, "numOfWeeksForIm": 6},
-                "bmi": {"value": 25.0, "targetValue": 21.1, "improvementValue": 3.9,
-                        "potentialAge": 30.044528789489956, "priority": 1, "stale": false,
+                "rhr": {"value": 58, "stale": false},
+                "vigorousMinutesAvg": {"value": 61.7, "stale": false, "numOfWeeksForIm": 6},
+                "bmi": {"value": 24.1, "targetValue": 21.5, "improvementValue": 2.6,
+                        "potentialAge": 36.94312480975103, "priority": 1, "stale": false,
                         "lastMeasurementDate": "2024-11-11"}
             },
             "lastUpdated": "2025-01-01T00:00:00.0"
@@ -271,17 +272,17 @@ mod tests {
             out,
             serde_json::json!({
                 "last_updated": "2025-01-01",
-                "chronological_age": 35,
-                "fitness_age": 30.8,
-                "previous_fitness_age": 30.8,
-                "achievable_fitness_age": 29.3,
+                "chronological_age": 42,
+                "fitness_age": 37.2,
+                "previous_fitness_age": 37.2,
+                "achievable_fitness_age": 35.7,
                 "components": {
-                    "vigorous_days_per_week": {"value": 2.5, "target_value": 3.0,
-                        "potential_fitness_age": 31.6, "priority": 2, "averaged_over_weeks": 6},
-                    "vigorous_minutes_per_week": {"value": 89.3, "averaged_over_weeks": 6},
-                    "resting_hr_bpm": {"value": 52.0},
-                    "bmi": {"value": 25.0, "target_value": 21.1, "improvement": 3.9,
-                        "potential_fitness_age": 30.0, "priority": 1,
+                    "vigorous_days_per_week": {"value": 1.5, "target_value": 3.0,
+                        "potential_fitness_age": 38.4, "priority": 2, "averaged_over_weeks": 6},
+                    "vigorous_minutes_per_week": {"value": 61.7, "averaged_over_weeks": 6},
+                    "resting_hr_bpm": {"value": 58.0},
+                    "bmi": {"value": 24.1, "target_value": 21.5, "improvement": 2.6,
+                        "potential_fitness_age": 36.9, "priority": 1,
                         "last_measurement_date": "2024-11-11"}
                 }
             })
@@ -291,19 +292,20 @@ mod tests {
     #[test]
     fn body_fat_replaces_bmi() {
         let out = summary(serde_json::json!({
-            "components": {"bodyFat": {"value": 17.0, "stale": false, "lastMeasurementDate": "2026-10-17"}}
+            "components": {"bodyFat": {"value": 21.0, "stale": false, "lastMeasurementDate": "2026-10-17"}}
         }));
         assert_eq!(
             out["components"],
-            serde_json::json!({"body_fat_percent": {"value": 17.0, "last_measurement_date": "2026-10-17"}})
+            serde_json::json!({"body_fat_percent": {"value": 21.0, "last_measurement_date": "2026-10-17"}})
         );
     }
 
     #[test]
     fn day_without_fitness_age_shows_missing_inputs() {
-        // Real response for a date before the user had data.
+        // Shape of a real response (values made up) for a date before the
+        // user had data.
         let out = summary(serde_json::json!({
-            "chronologicalAge": 25,
+            "chronologicalAge": 32,
             "components": {
                 "rhr": {"stale": true, "staleInputs": ["RHR"]},
                 "bmi": {"stale": true, "staleInputs": ["WEIGHT"]}
@@ -314,7 +316,7 @@ mod tests {
             out,
             serde_json::json!({
                 "last_updated": "2015-01-01",
-                "chronological_age": 25,
+                "chronological_age": 32,
                 "components": {
                     "resting_hr_bpm": {"stale": true, "stale_inputs": ["RHR"]},
                     "bmi": {"stale": true, "stale_inputs": ["WEIGHT"]}

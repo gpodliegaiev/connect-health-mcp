@@ -114,11 +114,11 @@ mod tests {
 
     #[test]
     fn floors_become_ranges() {
-        // Real response entry.
+        // Shape of a real response entry (values made up).
         let raw: HeartRateZones = serde_json::from_value(serde_json::json!({
-            "trainingMethod": "HR_MAX", "restingHeartRateUsed": 48,
-            "lactateThresholdHeartRateUsed": 167, "zone1Floor": 96, "zone2Floor": 115,
-            "zone3Floor": 134, "zone4Floor": 151, "zone5Floor": 172, "maxHeartRateUsed": 191,
+            "trainingMethod": "HR_MAX", "restingHeartRateUsed": 55,
+            "lactateThresholdHeartRateUsed": 160, "zone1Floor": 90, "zone2Floor": 108,
+            "zone3Floor": 126, "zone4Floor": 144, "zone5Floor": 162, "maxHeartRateUsed": 180,
             "restingHrAutoUpdateUsed": true, "sport": "DEFAULT"
         }))
         .unwrap();
@@ -126,9 +126,9 @@ mod tests {
             serde_json::to_value(raw.into_summary()).unwrap(),
             serde_json::json!({
                 "sport": "DEFAULT", "training_method": "HR_MAX",
-                "zones_bpm": {"zone_1": [96, 114], "zone_2": [115, 133], "zone_3": [134, 150],
-                              "zone_4": [151, 171], "zone_5": [172, 191]},
-                "max_hr": 191, "resting_hr": 48, "lactate_threshold_hr": 167,
+                "zones_bpm": {"zone_1": [90, 107], "zone_2": [108, 125], "zone_3": [126, 143],
+                              "zone_4": [144, 161], "zone_5": [162, 180]},
+                "max_hr": 180, "resting_hr": 55, "lactate_threshold_hr": 160,
                 "resting_hr_auto_update": true
             })
         );

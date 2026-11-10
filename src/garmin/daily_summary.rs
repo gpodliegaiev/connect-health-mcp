@@ -821,18 +821,19 @@ fn minute_text(text: &str) -> Option<String> {
 mod tests {
     use super::*;
 
-    /// Trimmed real entry of the range response (a partial day: today).
+    /// The shape of a real entry of the range response (values made up):
+    /// a partial day (today).
     fn range_day() -> serde_json::Value {
         serde_json::json!({
             "uuid": "x", "userProfilePk": 1, "calendarDate": "2026-10-24", "source": "garmin",
             "includesWellnessData": true, "includesActivityData": true,
             "wellnessChronology": {"startTimestampLocal": "2026-10-24T00:00:00.0",
                 "endTimestampLocal": "2026-10-24T15:14:00.0", "totalDurationInMillis": 54840000},
-            "movement": {"steps": {"goal": 8660, "value": 9659, "distanceInMeters": 4421.0},
+            "movement": {"steps": {"goal": 7500, "value": 7342, "distanceInMeters": 4421.0},
                 "pushes": {}, "floorsAscended": {"goal": 10, "value": 154, "distanceInMeters": 470.19},
                 "floorsDescended": {"value": 147, "distanceInMeters": 450.5}},
-            "calories": {"burnedResting": 1421, "burnedActive": 611, "burnedTotal": 2032},
-            "heartRate": {"minValue": 47, "maxValue": 152, "restingValue": 48},
+            "calories": {"burnedResting": 1612, "burnedActive": 488, "burnedTotal": 2100},
+            "heartRate": {"minValue": 54, "maxValue": 141, "restingValue": 56},
             "intensityMinutes": {"goal": 150, "moderate": 34, "vigorous": 30},
             "stress": {"avgLevel": 18, "maxLevel": 90, "restProportion": 0.66, "qualifier": "unknown",
                 "restDurationInMillis": 36180000, "activityDurationInMillis": 1740000,
@@ -850,7 +851,7 @@ mod tests {
                     {"eventType": "SLEEP", "eventStartTimeLocal": "2026-10-24T00:34:09.0",
                      "bodyBatteryImpact": 69, "feedbackType": "NONE", "shortFeedback": "NONE",
                      "durationInMillis": 32160000}]},
-            "hydration": {"goalInMl": 3677, "goalInFractionalMl": 3677.056, "consumedInMl": 0,
+            "hydration": {"goalInMl": 2950, "goalInFractionalMl": 2950.412, "consumedInMl": 0,
                 "consumedInFractionalMl": 0.0},
             "respiration": {"avgValue": 17, "maxValue": 33, "minValue": 8, "latestValue": 19},
             "pulseOx": {"avgAltitudeInMeters": 91.0},
@@ -867,10 +868,10 @@ mod tests {
             out,
             serde_json::json!([{
                 "date": "2026-10-24", "tracked_hours": 15.2, "tracked_until_local": "2026-10-24 15:14",
-                "steps": 9659, "step_goal": 8660, "steps_distance_km": 4.421,
+                "steps": 7342, "step_goal": 7500, "steps_distance_km": 4.421,
                 "floors_ascended": 154, "floors_descended": 147, "floors_goal": 10,
-                "calories_total_kcal": 2032, "calories_active_kcal": 611, "calories_resting_kcal": 1421,
-                "resting_hr": 48, "min_hr_2min_avg": 47, "max_hr_2min_avg": 152,
+                "calories_total_kcal": 2100, "calories_active_kcal": 488, "calories_resting_kcal": 1612,
+                "resting_hr": 56, "min_hr_2min_avg": 54, "max_hr_2min_avg": 141,
                 "moderate_intensity_minutes": 34, "vigorous_intensity_minutes": 30,
                 "intensity_minutes_weekly_goal": 150,
                 "stress_avg": 18, "stress_max": 90,
@@ -898,17 +899,17 @@ mod tests {
             "durationInMilliseconds": 86400000,
             "totalSteps": 12000, "wellnessDistanceMeters": 9000, "totalDistanceMeters": 15000,
             "floorsAscended": 154.2628, "totalKilocalories": 2500.0,
-            "consumedKilocalories": null, "minHeartRate": 45, "maxHeartRate": 160,
-            "lastSevenDaysAvgRestingHeartRate": 48, "highlyActiveSeconds": 2691,
+            "consumedKilocalories": null, "minHeartRate": 52, "maxHeartRate": 148,
+            "lastSevenDaysAvgRestingHeartRate": 56, "highlyActiveSeconds": 2691,
             "stressQualifier": "BALANCED", "restStressDuration": 36180,
             "bodyBatteryAtWakeTime": 100, "bodyBatteryDuringSleep": 68,
-            "hydrationValueInML": 0.0, "hydrationGoalInML": 3677.0,
+            "hydrationValueInML": 0.0, "hydrationGoalInML": 2950.0,
             "bodyBatteryActivityEventList": [{"eventType": "ACTIVITY",
                 "eventStartTimeGmt": "2026-10-24T09:06:58", "timezoneOffset": 7200000,
                 "durationInMilliseconds": 4800000, "bodyBatteryImpact": -15,
                 "feedbackType": "EXERCISE_TRAINING_EFFECT_2", "shortFeedback": "MAINTAINING_AEROBIC_BASE",
                 "deviceId": 1, "activityName": "Floor Climb", "activityType": "floor_climbing",
-                "activityId": 24833977744u64}]
+                "activityId": 1003}]
         }))
         .unwrap();
         let out = serde_json::to_value(raw.into_summary().unwrap()).unwrap();
@@ -917,13 +918,13 @@ mod tests {
             serde_json::json!({
                 "date": "2026-10-23", "steps": 12000, "steps_distance_km": 9.0,
                 "total_distance_km": 15.0, "floors_ascended": 154, "calories_total_kcal": 2500,
-                "resting_hr_7day_avg": 48, "min_hr": 45, "max_hr": 160,
+                "resting_hr_7day_avg": 56, "min_hr": 52, "max_hr": 148,
                 "highly_active_min": 44.85, "stress_qualifier": "BALANCED", "stress_rest_min": 603.0,
                 "body_battery_at_wake": 100, "body_battery_charged_during_sleep": 68,
                 "body_battery_events": [{"type": "ACTIVITY", "start_local": "2026-10-24 11:06",
                     "duration_min": 80.0, "impact": -15, "feedback": "EXERCISE_TRAINING_EFFECT_2",
                     "short_feedback": "MAINTAINING_AEROBIC_BASE", "activity_name": "Floor Climb",
-                    "activity_type": "floor_climbing", "activity_id": 24833977744u64}]
+                    "activity_type": "floor_climbing", "activity_id": 1003}]
             })
         );
     }

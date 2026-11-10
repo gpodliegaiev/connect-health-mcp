@@ -561,7 +561,7 @@ fn utc_to_local(utc: Option<String>, offset_minutes: Option<i64>) -> Option<Stri
 mod tests {
     use super::*;
 
-    /// Trimmed-down copy of a real `dailySleep` response.
+    /// The shape of a real `dailySleep` response (values made up).
     const SLEEP_JSON: &str = r#"{
         "id": 1792794849000,
         "userProfilePK": 1,
@@ -581,7 +581,7 @@ mod tests {
         "awakeCount": 2,
         "avgSleepStress": 12.0,
         "ageGroup": "ADULT",
-        "avgHeartRate": 53.0,
+        "avgHeartRate": 58.0,
         "sleepScoreFeedback": "POSITIVE_LONG_AND_DEEP",
         "sleepScoreInsight": "POSITIVE_LATE_BED_TIME",
         "sleepScorePersonalizedInsight": "NOT_AVAILABLE",
@@ -589,7 +589,7 @@ mod tests {
             "totalDuration": {"qualifierKey": "EXCELLENT", "optimalStart": 29400.0, "optimalEnd": 29400.0},
             "stress": {"qualifierKey": "EXCELLENT", "optimalStart": 0.0, "optimalEnd": 15.0},
             "awakeCount": {"qualifierKey": "FAIR", "optimalStart": 0.0, "optimalEnd": 1.0},
-            "overall": {"value": 87, "qualifierKey": "GOOD"},
+            "overall": {"value": 81, "qualifierKey": "GOOD"},
             "remPercentage": {"value": 18, "qualifierKey": "FAIR", "optimalStart": 21.0, "optimalEnd": 31.0,
                               "idealStartInSeconds": 6249.6, "idealEndInSeconds": 9225.6},
             "restlessness": {"qualifierKey": "FAIR", "optimalStart": 0.0, "optimalEnd": 5.0},
@@ -620,7 +620,7 @@ mod tests {
     fn flattens_sleep_response() {
         let s = sleep();
         assert_eq!(s.calendar_date, "2026-10-24");
-        assert_eq!(s.sleep_score, Some(87));
+        assert_eq!(s.sleep_score, Some(81));
         assert_eq!(s.sleep_score_rating.as_deref(), Some("GOOD"));
         // 29760 s = 496 min, 5940 s = 99 min.
         assert_eq!(s.total_sleep_minutes, Some(496.0));

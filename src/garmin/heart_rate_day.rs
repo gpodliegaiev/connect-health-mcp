@@ -274,7 +274,7 @@ fn parse_time(text: &str) -> Option<NaiveDateTime> {
 mod tests {
     use super::*;
 
-    /// A trimmed real day in progress (Europe/Paris, UTC+1): readings at
+    /// The shape of a real day in progress (values made up) (Europe/Paris, UTC+1): readings at
     /// 00:00, 00:02, a gap, then 00:20.
     fn raw() -> DailyHeartRate {
         serde_json::from_value(serde_json::json!({
@@ -283,8 +283,8 @@ mod tests {
             "endTimestampGMT": "2026-10-27T10:29:00.0",
             "startTimestampLocal": "2026-10-27T00:00:00.0",
             "endTimestampLocal": "2026-10-28T00:00:00.0",
-            "maxHeartRate": 96, "minHeartRate": 49, "restingHeartRate": 51,
-            "lastSevenDaysAvgRestingHeartRate": 48,
+            "maxHeartRate": 96, "minHeartRate": 54, "restingHeartRate": 57,
+            "lastSevenDaysAvgRestingHeartRate": 56,
             "heartRateValueDescriptors": [{"index": 0, "key": "timestamp"}],
             "heartRateValues": [
                 [1793055600000_i64, 70], [1793055720000_i64, 61],
@@ -299,8 +299,8 @@ mod tests {
         assert_eq!(
             serde_json::to_value(raw().into_summary(15)).unwrap(),
             serde_json::json!({
-                "date": "2026-10-27", "resting_hr_bpm": 51, "resting_hr_7day_avg_bpm": 48,
-                "min_hr_bpm": 49, "max_hr_bpm": 96,
+                "date": "2026-10-27", "resting_hr_bpm": 57, "resting_hr_7day_avg_bpm": 56,
+                "min_hr_bpm": 54, "max_hr_bpm": 96,
                 "tracked_until_local": "2026-10-27 11:29",
                 "interval_min": 15,
                 // (70 + 61) / 2 = 65.5 → 66.

@@ -392,40 +392,41 @@ fn kg(grams: Option<f64>) -> Option<f64> {
 mod tests {
     use super::*;
 
-    /// A trimmed real response: a day with two weigh-ins and context around.
+    /// The shape of a real response (values made up): a day with two
+    /// weigh-ins and context around.
     fn report() -> serde_json::Value {
         let range: WeightRange = serde_json::from_value(serde_json::json!({
             "dailyWeightSummaries": [{
                 "summaryDate": "2026-10-05", "numOfWeightEntries": 2,
-                "minWeight": 86870.0, "maxWeight": 88849.0,
+                "minWeight": 74500.0, "maxWeight": 75412.0,
                 "latestWeight": {
                     "samplePk": 1, "date": 1791235682000_i64, "calendarDate": "2026-10-05",
-                    "weight": 86870.0, "bmi": 25.700000762939453, "bodyFat": 15.9,
-                    "bodyWater": 61.4, "boneMass": 6239, "muscleMass": 35220,
+                    "weight": 74500.0, "bmi": 23.399999618530273, "bodyFat": 18.2,
+                    "bodyWater": 57.3, "boneMass": 3108, "muscleMass": 31450,
                     "physiqueRating": null, "visceralFat": null, "metabolicAge": null,
                     "sourceType": "INDEX_SCALE", "timestampGMT": 1791228482000_i64,
-                    "weightDelta": -1000.0
+                    "weightDelta": -700.0
                 },
                 "allWeightMetrics": [
                     {"date": 1791235682000_i64, "calendarDate": "2026-10-05",
-                     "weight": 86870.0, "sourceType": "INDEX_SCALE",
-                     "weightDelta": -1899.9999999999914},
+                     "weight": 74500.0, "sourceType": "INDEX_SCALE",
+                     "weightDelta": -899.9999999999915},
                     {"date": 1791235471000_i64, "calendarDate": "2026-10-05",
-                     "weight": 88849.0, "sourceType": "INDEX_SCALE",
-                     "weightDelta": 899.9999999999915}
+                     "weight": 75412.0, "sourceType": "INDEX_SCALE",
+                     "weightDelta": 600.0000000000085}
                 ]
             }],
-            "totalAverage": {"from": 1, "until": 2, "weight": 86870.0,
-                             "bmi": 25.700000762939453, "boneMass": 6239},
+            "totalAverage": {"from": 1, "until": 2, "weight": 74500.0,
+                             "bmi": 23.399999618530273, "boneMass": 3108},
             "previousDateWeight": {"date": 1788514900000_i64, "calendarDate": "2026-09-04",
-                                   "weight": 87860.0, "weightDelta": -500.0},
+                                   "weight": 75200.0, "weightDelta": -300.0},
             "nextDateWeight": null
         }))
         .unwrap();
         let goals: WeightGoals = serde_json::from_value(serde_json::json!({
             "userGoals": [{"userGoalCategory": "MANUAL", "userGoalType": "WEIGHT_GRAMS",
                            "startDate": "2026-02-09", "endDate": null, "goalName": null,
-                           "goalValue": 90000.0, "trackingPeriodType": "DAILY"}],
+                           "goalValue": 72000.0, "trackingPeriodType": "DAILY"}],
             "userGoalRanges": null
         }))
         .unwrap();
@@ -437,23 +438,23 @@ mod tests {
         assert_eq!(
             report(),
             serde_json::json!({
-                "goals": [{"target_weight_kg": 90.0, "start_date": "2026-02-09",
+                "goals": [{"target_weight_kg": 72.0, "start_date": "2026-02-09",
                            "set_by": "MANUAL", "tracking_period": "DAILY"}],
-                "range_average": {"weight_kg": 86.87, "bmi": 25.7, "bone_mass_kg": 6.24},
+                "range_average": {"weight_kg": 74.5, "bmi": 23.4, "bone_mass_kg": 3.11},
                 "days": [{
-                    "date": "2026-10-05", "time_local": "21:28", "weight_kg": 86.87,
-                    "change_kg": -1.0, "bmi": 25.7, "body_fat_percent": 15.9,
-                    "body_water_percent": 61.4, "muscle_mass_kg": 35.22,
-                    "bone_mass_kg": 6.24, "source": "INDEX_SCALE",
+                    "date": "2026-10-05", "time_local": "21:28", "weight_kg": 74.5,
+                    "change_kg": -0.7, "bmi": 23.4, "body_fat_percent": 18.2,
+                    "body_water_percent": 57.3, "muscle_mass_kg": 31.45,
+                    "bone_mass_kg": 3.11, "source": "INDEX_SCALE",
                     "measurements": [
-                        {"time_local": "21:28", "weight_kg": 86.87, "change_kg": -1.9,
+                        {"time_local": "21:28", "weight_kg": 74.5, "change_kg": -0.9,
                          "source": "INDEX_SCALE"},
-                        {"time_local": "21:24", "weight_kg": 88.85, "change_kg": 0.9,
+                        {"time_local": "21:24", "weight_kg": 75.41, "change_kg": 0.6,
                          "source": "INDEX_SCALE"}
                     ]
                 }],
                 "before_range": {"date": "2026-09-04", "time_local": "09:41",
-                                 "weight_kg": 87.86, "change_kg": -0.5}
+                                 "weight_kg": 75.2, "change_kg": -0.3}
             })
         );
     }

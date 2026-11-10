@@ -813,9 +813,9 @@ mod tests {
 
     #[test]
     fn treadmill_run_details() {
-        // Trimmed from a real response.
+        // Shape of a real response (id and values made up).
         let s = summary(serde_json::json!({
-            "activityId": 24793720591u64,
+            "activityId": 1002,
             "activityName": "Treadmill",
             "description": "",
             "activityTypeDTO": {"typeId": 18, "typeKey": "treadmill_running", "parentTypeId": 1},
@@ -826,7 +826,7 @@ mod tests {
                 "distance": 2800.0, "duration": 2703.101, "movingDuration": 2428.683,
                 "elapsedDuration": 2703.101, "avgElevation": -500.0,
                 "averageSpeed": 1.0360000133514404, "averageMovingSpeed": 1.1528882193105259,
-                "maxSpeed": 1.4739999771118164, "averageHR": 114.0, "minHR": 62.0,
+                "maxSpeed": 1.4739999771118164, "averageHR": 114.0, "minHR": 66.0,
                 "averageRunCadence": 87.78125, "averagePower": 78.0, "minPower": 0.0,
                 "strideLength": 68.10999755859375, "trainingEffect": 1.600000023841858,
                 "aerobicTrainingEffectMessage": "MINOR_AEROBIC_BENEFIT_6",
@@ -853,7 +853,7 @@ mod tests {
         assert_eq!(s.avg_moving_pace_per_km.as_deref(), Some("14:27"));
         assert_eq!(s.best_pace_per_km.as_deref(), Some("11:18"));
         assert_eq!(s.avg_speed_kmh, None);
-        assert_eq!(s.min_hr, Some(62.0));
+        assert_eq!(s.min_hr, Some(66.0));
         assert_eq!(s.avg_run_cadence_spm, Some(87.8));
         assert_eq!(s.stride_length_cm, Some(68.1));
         assert_eq!(s.aerobic_training_effect, Some(1.6));

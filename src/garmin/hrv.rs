@@ -208,17 +208,18 @@ mod tests {
 
     #[test]
     fn range_summaries_are_converted() {
-        // Real entries: a normal night and an onboarding night.
+        // Shape of real entries (values made up): a normal night and an
+        // onboarding night.
         let raw: HrvRange = serde_json::from_value(serde_json::json!({
             "userProfilePk": 1,
             "hrvSummaries": [
-                {"calendarDate": "2024-09-15", "weeklyAvg": null, "lastNightAvg": 45,
-                 "lastNight5MinHigh": 78, "baseline": null, "status": "NONE",
+                {"calendarDate": "2024-09-15", "weeklyAvg": null, "lastNightAvg": 38,
+                 "lastNight5MinHigh": 61, "baseline": null, "status": "NONE",
                  "feedbackPhrase": "ONBOARDING_1", "createTimeStamp": "2024-09-15T06:55:41.873"},
-                {"calendarDate": "2026-10-24", "weeklyAvg": 78, "lastNightAvg": 82,
-                 "lastNight5MinHigh": 120,
-                 "baseline": {"lowUpper": 56, "balancedLow": 62, "balancedUpper": 93,
-                              "markerValue": 0.50805664},
+                {"calendarDate": "2026-10-24", "weeklyAvg": 52, "lastNightAvg": 55,
+                 "lastNight5MinHigh": 84,
+                 "baseline": {"lowUpper": 40, "balancedLow": 44, "balancedUpper": 63,
+                              "markerValue": 0.4296875},
                  "status": "BALANCED", "feedbackPhrase": "HRV_BALANCED_7",
                  "createTimeStamp": "2026-10-24T07:57:41.742"}
             ]
@@ -228,11 +229,11 @@ mod tests {
         assert_eq!(
             out,
             serde_json::json!([
-                {"date": "2024-09-15", "last_night_avg_ms": 45, "last_night_5min_high_ms": 78,
+                {"date": "2024-09-15", "last_night_avg_ms": 38, "last_night_5min_high_ms": 61,
                  "feedback": "ONBOARDING_1"},
-                {"date": "2026-10-24", "last_night_avg_ms": 82, "last_night_5min_high_ms": 120,
-                 "weekly_avg_ms": 78, "baseline_balanced_ms": [62, 93],
-                 "baseline_low_upper_ms": 56, "status": "BALANCED",
+                {"date": "2026-10-24", "last_night_avg_ms": 55, "last_night_5min_high_ms": 84,
+                 "weekly_avg_ms": 52, "baseline_balanced_ms": [44, 63],
+                 "baseline_low_upper_ms": 40, "status": "BALANCED",
                  "feedback": "HRV_BALANCED_7"}
             ])
         );
@@ -241,11 +242,11 @@ mod tests {
     #[test]
     fn single_night_adds_readings() {
         let raw: HrvNight = serde_json::from_value(serde_json::json!({
-            "hrvSummary": {"calendarDate": "2026-10-24", "lastNightAvg": 82, "status": "BALANCED"},
+            "hrvSummary": {"calendarDate": "2026-10-24", "lastNightAvg": 55, "status": "BALANCED"},
             "hrvReadings": [
-                {"hrvValue": 63, "readingTimeGMT": "2026-10-23T22:37:10.0",
+                {"hrvValue": 47, "readingTimeGMT": "2026-10-23T22:37:10.0",
                  "readingTimeLocal": "2026-10-24T00:37:10.0"},
-                {"hrvValue": 94, "readingTimeGMT": "2026-10-23T22:42:10.0",
+                {"hrvValue": 66, "readingTimeGMT": "2026-10-23T22:42:10.0",
                  "readingTimeLocal": "2026-10-24T00:42:10.0"}
             ],
             "startTimestampGMT": "2026-10-23T22:34:09.0",
@@ -257,10 +258,10 @@ mod tests {
         assert_eq!(
             out,
             serde_json::json!({
-                "date": "2026-10-24", "last_night_avg_ms": 82, "status": "BALANCED",
+                "date": "2026-10-24", "last_night_avg_ms": 55, "status": "BALANCED",
                 "measured_from_local": "2026-10-24 00:34:09",
                 "measured_to_local": "2026-10-24 09:27:10",
-                "readings_ms": [["00:37", 63], ["00:42", 94]]
+                "readings_ms": [["00:37", 47], ["00:42", 66]]
             })
         );
     }
