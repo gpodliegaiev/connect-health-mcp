@@ -159,7 +159,11 @@ async fn check() -> Option<String> {
     let latest = newer_version(CURRENT_VERSION, &release.tag_name)?;
     let exe = std::env::current_exe().ok()?;
     let url = release_url(&latest);
-    Some(note_text(&latest, &update_command(&exe, &url), &url))
+    // The home folder is passed in (instead of looked up inside) so tests
+    // can use a made-up one.
+    let home = std::env::home_dir();
+    let how = update_command(&exe, home.as_deref(), &url);
+    Some(note_text(&latest, &how, &url))
 }
 
 /// The release page for `version`, built from our own constant. A parsed
@@ -216,7 +220,11 @@ fn newer_version(current: &str, tag: &str) -> Option<Version> {
 /// - The `curl | sh` installer puts `garmin-mcp-update` next to it.
 /// - A binary under `target/release` or `target/debug` was built from source.
 /// - Otherwise it was downloaded by hand.
-fn update_command(exe: &Path, release_url: &str) -> String {
+///
+/// The note goes to the AI provider with the tool result, so paths under
+/// the home folder are written with `~` (see [`home_relative`]): the full
+/// path would include the user's OS account name.
+fn update_command(exe: &Path, home: Option<&Path>, release_url: &str) -> String {
     let path = exe.to_string_lossy().replace('\\', "/");
     let dir = exe.parent().unwrap_or(Path::new(""));
     let updater = ["garmin-mcp-update", "garmin-mcp-update.exe"]
@@ -225,20 +233,36 @@ fn update_command(exe: &Path, release_url: &str) -> String {
         .find(|candidate| candidate.is_file());
 
     if let Some(updater) = updater {
-        // Quoted, so a path with spaces (`/Users/Jane Doe/...`) still works
-        // when pasted into a shell.
-        format!(
-            "run `{}`",
-            crate::setup::shell_quote(&updater.display().to_string())
-        )
+        // `match` on the `Option` from `home_relative`: `Some(short)` binds
+        // the `~` form, `None` means the updater isn't under the home folder.
+        let command = match home_relative(&updater, home) {
+            // `~/...` must stay outside quotes, or the shell wouldn't expand
+            // it. The default install path (`~/.local/bin/...`) needs no
+            // quotes, so this is the usual case.
+            Some(short) if crate::setup::shell_quote(&short) == short => short,
+            // Outside the home folder, or a home-relative part with spaces:
+            // the full path, quoted so it still works when pasted into a
+            // shell (`'/opt/my tools/...'`).
+            _ => crate::setup::shell_quote(&updater.display().to_string()),
+        };
+        format!("run `{command}`")
     } else if path.contains("/target/release/") || path.contains("/target/debug/") {
         "pull the latest code and run `cargo build --release`".to_string()
     } else {
-        format!(
-            "download it from {release_url} and replace {}",
-            exe.display()
-        )
+        // Plain text for a person, not a command, so `~` is always fine.
+        let shown = home_relative(exe, home).unwrap_or_else(|| exe.display().to_string());
+        format!("download it from {release_url} and replace {shown}")
     }
+}
+
+/// `path` written as `~/...` (`~\...` on Windows) if it is inside `home`,
+/// else `None`.
+fn home_relative(path: &Path, home: Option<&Path>) -> Option<String> {
+    // `?` on an `Option`: no home folder, or a path outside it (the
+    // `strip_prefix` error turned into `None` by `.ok()`), returns `None`.
+    let rest = path.strip_prefix(home?).ok()?;
+    // `MAIN_SEPARATOR` is `/` on macOS and Linux, `\` on Windows.
+    Some(format!("~{}{}", std::path::MAIN_SEPARATOR, rest.display()))
 }
 
 /// The note added to a tool result. It ends by telling the AI not to run the
@@ -337,35 +361,59 @@ mod tests {
     #[test]
     fn command_depends_on_install_method() {
         let url = "https://example.com/release";
+        let home = Some(Path::new("/home/me"));
         assert_eq!(
             update_command(
                 Path::new("/home/me/garmin-mcp/target/release/garmin-mcp"),
+                home,
                 url
             ),
             "pull the latest code and run `cargo build --release`"
         );
         assert_eq!(
-            update_command(Path::new("/opt/tools/garmin-mcp"), url),
+            update_command(Path::new("/opt/tools/garmin-mcp"), home, url),
             "download it from https://example.com/release and replace /opt/tools/garmin-mcp"
         );
+        // Under the home folder: `~` instead of the account name.
+        if !cfg!(windows) {
+            assert_eq!(
+                update_command(Path::new("/home/me/apps/garmin-mcp"), home, url),
+                "download it from https://example.com/release and replace ~/apps/garmin-mcp"
+            );
+        }
 
-        // Installed by the `curl | sh` installer: the updater sits next to it.
-        let dir =
-            std::env::temp_dir().join(format!("garmin-mcp-updater-test-{}", std::process::id()));
+        // Installed by the `curl | sh` installer: the updater sits next to
+        // it. The temp folder stands in for the home folder here.
+        let tmp = std::env::temp_dir();
+        let dir = tmp.join(format!("garmin-mcp-updater-test-{}", std::process::id()));
         fs::create_dir_all(&dir).unwrap();
         fs::write(dir.join("garmin-mcp-update"), "").unwrap();
+        let sep = std::path::MAIN_SEPARATOR;
+        let expected = format!(
+            "run `~{sep}garmin-mcp-updater-test-{}{sep}garmin-mcp-update`",
+            std::process::id()
+        );
+        assert_eq!(
+            update_command(&dir.join("garmin-mcp"), Some(&tmp), url),
+            expected
+        );
+        // Outside the home folder: the full path.
         let expected = format!("run `{}`", dir.join("garmin-mcp-update").display());
-        assert_eq!(update_command(&dir.join("garmin-mcp"), url), expected);
+        assert_eq!(update_command(&dir.join("garmin-mcp"), None, url), expected);
         fs::remove_dir_all(&dir).unwrap();
 
         // A path with a space is quoted, so it can be pasted into a shell.
+        // Under the home folder it is then written in full, since `~` would
+        // not be expanded inside quotes.
         if !cfg!(windows) {
-            let dir = std::env::temp_dir()
-                .join(format!("garmin-mcp updater test {}", std::process::id()));
+            let dir = tmp.join(format!("garmin-mcp updater test {}", std::process::id()));
             fs::create_dir_all(&dir).unwrap();
             fs::write(dir.join("garmin-mcp-update"), "").unwrap();
             let expected = format!("run `'{}'`", dir.join("garmin-mcp-update").display());
-            assert_eq!(update_command(&dir.join("garmin-mcp"), url), expected);
+            assert_eq!(
+                update_command(&dir.join("garmin-mcp"), Some(&tmp), url),
+                expected
+            );
             fs::remove_dir_all(&dir).unwrap();
         }
     }
