@@ -115,6 +115,15 @@ impl GarminClient {
         // reused between requests.
         let http = reqwest::Client::builder()
             .timeout(REQUEST_TIMEOUT)
+            // Garmin's API never redirects, so a redirect is refused rather
+            // than followed: the key and token then can't be sent anywhere
+            // but `BASE_URL`. (reqwest would drop the `Authorization` header
+            // on a redirect to another host anyway; this also covers a
+            // redirect to plain HTTP on the same host.)
+            .redirect(reqwest::redirect::Policy::none())
+            // Refuse any `http://` URL, so the key and token only travel
+            // encrypted.
+            .https_only(true)
             .build()
             .context("could not create HTTP client")?;
 

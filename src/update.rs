@@ -181,6 +181,11 @@ async fn fetch_latest() -> anyhow::Result<Option<Release>> {
         // GitHub's API rejects requests without a User-Agent. `concat!`
         // joins string literals at compile time.
         .user_agent(concat!("garmin-mcp/", env!("CARGO_PKG_VERSION")))
+        // Only the fixed GitHub API URL, over HTTPS: no redirects (GitHub
+        // answers this URL directly; a 3xx then fails as "unexpected
+        // answer" and is retried the next day).
+        .redirect(reqwest::redirect::Policy::none())
+        .https_only(true)
         .build()?;
     let response = http
         .get(LATEST_RELEASE_URL)
