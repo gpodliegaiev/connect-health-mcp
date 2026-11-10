@@ -33,3 +33,115 @@ targets = [
 # Leave out test-only and build-only crates: they are not in the binary.
 ignore-dev-dependencies = true
 ignore-build-dependencies = true
+
+# Built-in fixes from cargo-about for popular crates with unusual license
+# files: chrono puts the MIT and Apache-2.0 texts in one file.
+workarounds = ["chrono"]
+
+# --- Crate clarifications -------------------------------------------------
+# cargo-about reads each crate's license files to copy the real text, with
+# its copyright lines, into the notices page. When it can't recognize a file,
+# it falls back to a generic template with `<year> <owner>` placeholders,
+# which lacks the copyright notice the license requires. The entries below
+# name the right file for those crates. `checksum` is the file's SHA-256
+# (`shasum -a 256 <file>` in ~/.cargo/registry/src/*/<crate>-<version>/): if
+# a new crate version changes the file, cargo-about warns and the entry must
+# be checked and updated.
+
+# aws-lc-sys (the crypto library behind TLS) has one combined LICENSE file
+# listing every copyright holder (Amazon, Google/BoringSSL, the OpenSSL
+# Project, Eric Young, ...) and the full license texts, so the whole file is
+# used for each of its licenses.
+[aws-lc-sys.clarify]
+license = "ISC AND (Apache-2.0 OR ISC) AND Apache-2.0 AND MIT AND BSD-3-Clause AND (Apache-2.0 OR ISC OR MIT) AND (Apache-2.0 OR ISC OR MIT-0)"
+[[aws-lc-sys.clarify.files]]
+path = "LICENSE"
+checksum = "728536b4160e051f86d7c9c388f704866b3d512cd7df97ac3516c65279523c4e"
+
+# aws-lc-rs: Apache-2.0 text plus the ISC text with Amazon's copyright, in
+# one file.
+[aws-lc-rs.clarify]
+license = "ISC AND (Apache-2.0 OR ISC)"
+[[aws-lc-rs.clarify.files]]
+path = "LICENSE"
+checksum = "b50b376e7d24a0598488b730c3034ffcd0b58dd36c0913a24b9903a3cfd04bf7"
+
+# The windows-* crates (Windows build only): cargo-about doesn't recognize
+# their license files. All of them ship the same two files.
+
+[windows-core.clarify]
+license = "MIT OR Apache-2.0"
+[[windows-core.clarify.files]]
+path = "license-mit"
+license = "MIT"
+checksum = "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383"
+[[windows-core.clarify.files]]
+path = "license-apache-2.0"
+license = "Apache-2.0"
+checksum = "c16f8dcf1a368b83be78d826ea23de4079fe1b4469a0ab9ee20563f37ff3d44b"
+
+[windows-implement.clarify]
+license = "MIT OR Apache-2.0"
+[[windows-implement.clarify.files]]
+path = "license-mit"
+license = "MIT"
+checksum = "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383"
+[[windows-implement.clarify.files]]
+path = "license-apache-2.0"
+license = "Apache-2.0"
+checksum = "c16f8dcf1a368b83be78d826ea23de4079fe1b4469a0ab9ee20563f37ff3d44b"
+
+[windows-interface.clarify]
+license = "MIT OR Apache-2.0"
+[[windows-interface.clarify.files]]
+path = "license-mit"
+license = "MIT"
+checksum = "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383"
+[[windows-interface.clarify.files]]
+path = "license-apache-2.0"
+license = "Apache-2.0"
+checksum = "c16f8dcf1a368b83be78d826ea23de4079fe1b4469a0ab9ee20563f37ff3d44b"
+
+[windows-link.clarify]
+license = "MIT OR Apache-2.0"
+[[windows-link.clarify.files]]
+path = "license-mit"
+license = "MIT"
+checksum = "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383"
+[[windows-link.clarify.files]]
+path = "license-apache-2.0"
+license = "Apache-2.0"
+checksum = "c16f8dcf1a368b83be78d826ea23de4079fe1b4469a0ab9ee20563f37ff3d44b"
+
+[windows-result.clarify]
+license = "MIT OR Apache-2.0"
+[[windows-result.clarify.files]]
+path = "license-mit"
+license = "MIT"
+checksum = "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383"
+[[windows-result.clarify.files]]
+path = "license-apache-2.0"
+license = "Apache-2.0"
+checksum = "c16f8dcf1a368b83be78d826ea23de4079fe1b4469a0ab9ee20563f37ff3d44b"
+
+[windows-strings.clarify]
+license = "MIT OR Apache-2.0"
+[[windows-strings.clarify.files]]
+path = "license-mit"
+license = "MIT"
+checksum = "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383"
+[[windows-strings.clarify.files]]
+path = "license-apache-2.0"
+license = "Apache-2.0"
+checksum = "c16f8dcf1a368b83be78d826ea23de4079fe1b4469a0ab9ee20563f37ff3d44b"
+
+[windows-sys.clarify]
+license = "MIT OR Apache-2.0"
+[[windows-sys.clarify.files]]
+path = "license-mit"
+license = "MIT"
+checksum = "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383"
+[[windows-sys.clarify.files]]
+path = "license-apache-2.0"
+license = "Apache-2.0"
+checksum = "c16f8dcf1a368b83be78d826ea23de4079fe1b4469a0ab9ee20563f37ff3d44b"
