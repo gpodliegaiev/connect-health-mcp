@@ -6,7 +6,7 @@ The release workflow copies the section for a version into its GitHub release no
 
 ## Unreleased
 
-## 0.2.0 - 2026-11-09
+## 0.2.0 - 2026-11-10
 
 First public release, with ready-made binaries for macOS (Apple Silicon and Intel), Linux (x86_64) and Windows (x86_64).
 
