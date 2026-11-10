@@ -225,7 +225,12 @@ fn update_command(exe: &Path, release_url: &str) -> String {
         .find(|candidate| candidate.is_file());
 
     if let Some(updater) = updater {
-        format!("run `{}`", updater.display())
+        // Quoted, so a path with spaces (`/Users/Jane Doe/...`) still works
+        // when pasted into a shell.
+        format!(
+            "run `{}`",
+            crate::setup::shell_quote(&updater.display().to_string())
+        )
     } else if path.contains("/target/release/") || path.contains("/target/debug/") {
         "pull the latest code and run `cargo build --release`".to_string()
     } else {
@@ -352,6 +357,17 @@ mod tests {
         let expected = format!("run `{}`", dir.join("garmin-mcp-update").display());
         assert_eq!(update_command(&dir.join("garmin-mcp"), url), expected);
         fs::remove_dir_all(&dir).unwrap();
+
+        // A path with a space is quoted, so it can be pasted into a shell.
+        if !cfg!(windows) {
+            let dir = std::env::temp_dir()
+                .join(format!("garmin-mcp updater test {}", std::process::id()));
+            fs::create_dir_all(&dir).unwrap();
+            fs::write(dir.join("garmin-mcp-update"), "").unwrap();
+            let expected = format!("run `'{}'`", dir.join("garmin-mcp-update").display());
+            assert_eq!(update_command(&dir.join("garmin-mcp"), url), expected);
+            fs::remove_dir_all(&dir).unwrap();
+        }
     }
 
     #[test]

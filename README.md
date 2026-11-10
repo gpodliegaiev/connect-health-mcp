@@ -74,7 +74,7 @@ gh attestation verify garmin-mcp-aarch64-apple-darwin.tar.gz -R gpodliegaiev/gar
 garmin-mcp setup
 ```
 
-`setup` asks for your API key, without showing it on screen, and checks it with Garmin. It then saves the key to `~/.config/garmin-mcp/.env` (`%APPDATA%\garmin-mcp\.env` on Windows), readable only by you, and prints the exact commands to add the server to Claude Code and Claude Desktop, with the binary's full path. Run it again to replace the key.
+`setup` asks for your API key, without showing it on screen, and checks it with Garmin. It then saves the key to `~/.config/garmin-mcp/.env` (`%APPDATA%\garmin-mcp\.env` on Windows), readable only by you (on Windows the file keeps the permissions of `%APPDATA%`, which is private to your user by default), and prints the exact commands to add the server to Claude Code and Claude Desktop, with the binary's full path. Run it again to replace the key.
 
 ### 3. Connect your AI app
 
@@ -109,7 +109,7 @@ Delete `garmin-mcp` and `garmin-mcp-update` from `~/.local/bin`, and the folder 
 The server looks for each variable in these places, in order, and uses the first value it finds:
 
 1. An environment variable, for example set in the MCP client's config (see below).
-2. A `.env` file in the directory the server is started from, or one of its parents. Useful for development inside this repository.
+2. Development builds only (`cargo run`, `cargo build` without `--release`): a `.env` file in the directory the server is started from, or one of its parents. Useful for working inside this repository. Release builds ignore it, so a `.env` in a project you open can't swap in another Garmin key.
 3. **`~/.config/garmin-mcp/.env`** (`$XDG_CONFIG_HOME/garmin-mcp/.env` if that is set; `%APPDATA%\garmin-mcp\.env` on Windows). This is the recommended place. It works wherever the binary is and whichever directory the client starts it from, and it survives updates.
 4. A `.env` file next to the `garmin-mcp` binary.
 
@@ -241,8 +241,8 @@ The check runs in the background and never slows down a tool call. If GitHub can
 
 - **Your Garmin data goes only from Garmin to your AI app.** garmin-mcp runs on your computer, requests your data from Garmin's API when a tool is called, and returns it to the AI app that started it. It doesn't store the data or send it anywhere else.
 - **Your AI provider receives what the tools return.** The AI app sends tool results to its model provider (Anthropic, OpenAI, Google, ...) as part of the conversation, under that provider's terms. This includes health data such as heart rate, HRV, sleep, weight and body composition. Choose your provider and its data settings with that in mind.
-- **What is stored locally:** only your API key (`~/.config/garmin-mcp/.env`, readable only by your user when written by `garmin-mcp setup`) and the time of the last update check.
-- **Network connections:** Garmin's API (`personal.connectapi.garmin.com`) and, once a day, GitHub's API for the update check (see [Updates](#updates)). Nothing else.
+- **What is stored locally:** only your API key (`~/.config/garmin-mcp/.env`, readable only by your user when written by `garmin-mcp setup`; on Windows it keeps the default permissions of `%APPDATA%`) and the time of the last update check.
+- **Network connections:** the server connects only to Garmin's API (`personal.connectapi.garmin.com`) and, once a day, GitHub's API for the update check (see [Updates](#updates)). Nothing else. Separately, the install script and `garmin-mcp-update` download releases from GitHub when you run them, and the install script may add `~/.local/bin` to your shell profile's `PATH`.
 - **Not medical advice.** The data and anything an AI concludes from it are for information only. garmin-mcp is provided as is, without warranty of any kind (see [LICENSE](LICENSE)).
 
 ## Development
@@ -301,4 +301,4 @@ After adding a tool, run it with `--offline` to update only the implementation s
 
 ## License
 
-[MIT](LICENSE)
+[MIT](LICENSE). Release archives also include the license notices of the code built into the binary: `THIRD-PARTY-LICENSES.html` (Rust crates), `RUST-STD-LICENSES.html` (Rust's standard library) and `MUSL-LICENSE.txt` (musl libc, in the Linux build).

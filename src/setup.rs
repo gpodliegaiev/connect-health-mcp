@@ -219,8 +219,8 @@ fn save(dir: &Path, path: &Path, content: &str) -> anyhow::Result<()> {
     options.write(true).create_new(true);
     // `#[cfg(unix)]` compiles this block only on macOS and Linux. Mode 0o600
     // (an octal number) means read and write for the owner, nothing for
-    // anyone else. Windows keeps files in the user's profile private by
-    // default.
+    // anyone else. On Windows no permissions are set: the file gets those of
+    // its folder, `%APPDATA%`, which is private to the user by default.
     #[cfg(unix)]
     {
         // Importing a trait inside a block makes its `.mode()` method
@@ -240,8 +240,8 @@ fn save(dir: &Path, path: &Path, content: &str) -> anyhow::Result<()> {
 }
 
 /// Warns when a key from somewhere with higher priority (an environment
-/// variable, or a `.env` in the current directory) would be used instead
-/// of the one just saved.
+/// variable, or in development builds a `.env` in the current directory)
+/// would be used instead of the one just saved.
 fn warn_if_overridden(saved: &Path) {
     match config::api_key_source() {
         Some(Source::File(path)) if path == saved => {}
@@ -286,8 +286,10 @@ fn print_next_steps() {
     );
 }
 
-/// Quotes a path for pasting into a shell, if it needs it.
-fn shell_quote(path: &str) -> String {
+/// Quotes a path for pasting into a shell, if it needs it. Also used by
+/// `update.rs` for the update command. `pub(crate)` makes it visible to the
+/// rest of this program, but not outside it.
+pub(crate) fn shell_quote(path: &str) -> String {
     let plain = path
         .chars()
         .all(|c| c.is_ascii_alphanumeric() || "/._-~:\\".contains(c));

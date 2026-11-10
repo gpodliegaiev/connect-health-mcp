@@ -19,9 +19,12 @@ install-path = "~/.local/bin/"
 install-updater = true
 # Archive format for macOS and Linux (.tar.gz opens everywhere without extra tools)
 unix-archive = ".tar.gz"
-# Extra files in every archive. The licenses of the crates built into the
-# binary must ship with it (see about.toml for how to regenerate the file)
-include = ["THIRD-PARTY-LICENSES.html"]
+# Extra files in every archive. The license notices of everything built into
+# the binary must ship with it: the crates (THIRD-PARTY-LICENSES.html, see
+# about.toml for how to regenerate it), Rust's standard library
+# (RUST-STD-LICENSES.html, the toolchain's share/doc/rust/COPYRIGHT-library.html)
+# and musl libc, statically linked into the Linux build (MUSL-LICENSE.txt)
+include = ["THIRD-PARTY-LICENSES.html", "RUST-STD-LICENSES.html", "MUSL-LICENSE.txt"]
 # Sign build provenance for every artifact, so users can check that a binary
 # was built from this repo by this workflow (`gh attestation verify`)
 github-attestations = true

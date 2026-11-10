@@ -19,11 +19,11 @@ First public release, with ready-made binaries for macOS (Apple Silicon and Inte
 ### Features
 
 - Tools: `list_activities`, `get_activity`, `get_sleep`, `get_fitness_age`, `get_hrv`, `get_daily_summary`, `get_heart_rate_zones`, `get_weight`, `get_body_battery`, `get_heart_rate_day`.
-- The API key is read from the `GARMIN_API_KEY` environment variable or a `.env` file (working folder, `~/.config/garmin-mcp/`, or next to the binary).
+- The API key is read from the `GARMIN_API_KEY` environment variable or a `.env` file in `~/.config/garmin-mcp/` or next to the binary. A `.env` in the folder the server is started from is read only by development builds, so a project you open can't swap in another Garmin key.
 - Update notice: once a day the server checks GitHub for a newer release. If there is one, the first tool result of a session includes a short note for the AI to pass on, with the update command for your install method. Nothing is updated automatically. Turn the check off with `GARMIN_MCP_NO_UPDATE_CHECK=1`.
 - `garmin-mcp --version` and `garmin-mcp --help`.
 
 ### Notes
 
 - Unofficial: not affiliated with or endorsed by Garmin. See the README's "Privacy and disclaimer" section for where your data goes.
-- License notices of the bundled open-source libraries are in `THIRD-PARTY-LICENSES.html` in each archive.
+- License notices of the code built into the binary are in each archive: `THIRD-PARTY-LICENSES.html` (Rust crates), `RUST-STD-LICENSES.html` (Rust's standard library) and `MUSL-LICENSE.txt` (musl libc, in the Linux build).

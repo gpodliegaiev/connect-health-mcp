@@ -2,14 +2,20 @@
 //!
 //! Settings: `GARMIN_API_KEY` (required) and `GARMIN_MCP_NO_UPDATE_CHECK`
 //! (optional, turns off the update check). The Garmin API address is fixed
-//! in `garmin/client.rs`, not a setting: source 2 below can be a `.env` in
-//! any project the user opens, and must never be able to redirect the key.
+//! in `garmin/client.rs`, not a setting: in development builds source 2
+//! below can be a `.env` in any project the user opens, and must never be
+//! able to redirect the key.
 //!
 //! Each setting is looked up in this order; the first non-empty value wins:
 //! 1. A real environment variable, e.g. set in the MCP client's server
 //!    config (`claude mcp add -e ...`, `"env"` in Claude Desktop's config).
-//! 2. A `.env` file in the current directory or one of its parents. Handy for
-//!    development inside the repository.
+//! 2. Development builds only (`cargo build` / `cargo run`, not
+//!    `--release`): a `.env` file in the current directory or one of its
+//!    parents. Handy for working inside the repository. Release builds skip
+//!    it: the MCP client starts the server in whatever project is open, and a
+//!    `.env` there (e.g. in a cloned repository) could otherwise swap in
+//!    someone else's Garmin key, whose activity names and descriptions would
+//!    then reach the AI as if they were the user's data.
 //! 3. `garmin-mcp/.env` in the user's config folder: `~/.config` on macOS and
 //!    Linux (`$XDG_CONFIG_HOME` if set), `%APPDATA%` on Windows. The
 //!    recommended place for users: it doesn't depend on where the binary is
@@ -241,10 +247,18 @@ fn config_dir_from(
 fn env_files() -> Vec<PathBuf> {
     let mut files = Vec::new();
 
-    // 2. The working directory or its closest parent that has a `.env`.
+    // 2. Development builds only: the working directory or its closest
+    // parent that has a `.env`. `cfg!(debug_assertions)` is `true` in a
+    // debug build (`cargo build`, `cargo run`) and `false` in a release build
+    // (`--release`, which is what users install), so users never read a
+    // `.env` from the project their AI app happens to be open in.
     // `.ancestors()` yields the folder itself, then its parent, and so on up
     // to the root. If none has one, list the working directory's.
-    if let Ok(cwd) = env::current_dir() {
+    // `if cfg!(...) && let Ok(cwd) = ...` is a "let chain": the `let` part
+    // only runs, and binds `cwd`, if the condition before it is true.
+    if cfg!(debug_assertions)
+        && let Ok(cwd) = env::current_dir()
+    {
         let found = cwd
             .ancestors()
             .map(|dir| dir.join(".env"))
