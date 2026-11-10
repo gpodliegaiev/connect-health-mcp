@@ -136,7 +136,7 @@ impl GarminClient {
     }
 
     /// Asks Garmin whether the configured API key works (used by
-    /// `garmin-mcp setup`). See [`TokenManager::check_key`].
+    /// `connect-health-mcp setup`). See [`TokenManager::check_key`].
     pub async fn check_key(&self) -> anyhow::Result<KeyCheck> {
         self.tokens.check_key().await
     }

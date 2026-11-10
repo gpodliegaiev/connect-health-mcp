@@ -1,4 +1,4 @@
-//! `garmin-mcp setup`: saves the user's API key, so nobody has to create a
+//! `connect-health-mcp setup`: saves the user's API key, so nobody has to create a
 //! `.env` file by hand.
 //!
 //! The steps:
@@ -6,7 +6,7 @@
 //!    up in the shell history.
 //! 2. Check it with Garmin (one token request), so a mistyped key is caught
 //!    now instead of as a failing tool later.
-//! 3. Save it to `garmin-mcp/.env` in the user's config folder (see
+//! 3. Save it to `connect-health-mcp/.env` in the user's config folder (see
 //!    `config.rs`), readable only by the user. Other settings already in
 //!    that file are kept.
 //! 4. Print how to add the server to Claude Code and Claude Desktop, with
@@ -114,7 +114,7 @@ pub async fn run() -> anyhow::Result<()> {
             eprintln!("rejected (HTTP {status})");
             bail!(
                 "Garmin did not accept this key. Check that it was copied completely, \
-                 then run `garmin-mcp setup` again."
+                 then run `connect-health-mcp setup` again."
             );
         }
         Ok(KeyCheck::Rejected(status)) => {
@@ -167,7 +167,7 @@ fn has_key(content: &str) -> bool {
 fn check_format(key: &str) -> anyhow::Result<()> {
     if key.is_empty() {
         bail!(
-            "no key was entered. Run `garmin-mcp setup` again, paste the key \
+            "no key was entered. Run `connect-health-mcp setup` again, paste the key \
              (nothing shows while you paste), then press Enter"
         );
     }
@@ -193,7 +193,7 @@ fn with_key(existing: &str, key: &str) -> String {
     let mut lines: Vec<&str> = existing.lines().filter(|line| !defines_key(line)).collect();
     if lines.iter().all(|line| line.trim().is_empty()) {
         lines = vec![
-            "# garmin-mcp settings, written by `garmin-mcp setup`.",
+            "# connect-health-mcp settings, written by `connect-health-mcp setup`.",
             "# Keep this file private: it holds your Garmin API key.",
         ];
     }
@@ -298,13 +298,13 @@ fn warn_if_overridden(saved: &Path) {
 
 /// Prints how to add the server to Claude Code and Claude Desktop, with the
 /// full path of this binary. Claude Desktop is a GUI app and doesn't use the
-/// shell's `PATH`, so a bare `garmin-mcp` wouldn't be found there.
+/// shell's `PATH`, so a bare `connect-health-mcp` wouldn't be found there.
 fn print_next_steps() {
     // `current_exe()` is the running program's path, e.g.
-    // `/Users/you/.local/bin/garmin-mcp`.
+    // `/Users/you/.local/bin/connect-health-mcp`.
     let exe = env::current_exe()
         .map(|path| path.display().to_string())
-        .unwrap_or_else(|_| "garmin-mcp".to_string());
+        .unwrap_or_else(|_| "connect-health-mcp".to_string());
 
     eprintln!("\nNext, add the server to your AI app (restart the app if it was already added).");
     eprintln!("\nClaude Code:");
@@ -322,7 +322,7 @@ fn print_next_steps() {
     eprintln!(
         "\nThe server checks GitHub for a newer version once a day (this sends your IP address \
          and the version number, no Garmin data). To turn it off, add \
-         GARMIN_MCP_NO_UPDATE_CHECK=1 to the saved .env file."
+         CONNECT_HEALTH_MCP_NO_UPDATE_CHECK=1 to the saved .env file."
     );
 }
 
@@ -358,7 +358,7 @@ mod tests {
     fn new_file_gets_header_and_key() {
         assert_eq!(
             with_key("", "abc123"),
-            "# garmin-mcp settings, written by `garmin-mcp setup`.\n\
+            "# connect-health-mcp settings, written by `connect-health-mcp setup`.\n\
              # Keep this file private: it holds your Garmin API key.\n\
              GARMIN_API_KEY=abc123\n"
         );
@@ -417,7 +417,10 @@ mod tests {
 
     #[test]
     fn save_writes_a_private_file_and_replaces_it() {
-        let dir = env::temp_dir().join(format!("garmin-mcp-setup-test-{}", std::process::id()));
+        let dir = env::temp_dir().join(format!(
+            "connect-health-mcp-setup-test-{}",
+            std::process::id()
+        ));
         let path = dir.join(".env");
         save(&dir, &path, "GARMIN_API_KEY=one\n").unwrap();
         save(&dir, &path, "GARMIN_API_KEY=two\n").unwrap();
@@ -434,7 +437,10 @@ mod tests {
 
     #[test]
     fn failed_save_leaves_no_temp_file() {
-        let dir = env::temp_dir().join(format!("garmin-mcp-setup-fail-{}", std::process::id()));
+        let dir = env::temp_dir().join(format!(
+            "connect-health-mcp-setup-fail-{}",
+            std::process::id()
+        ));
         // A non-empty folder named `.env` can't be replaced by a file, so
         // the rename fails on every system.
         let path = dir.join(".env");
@@ -448,15 +454,18 @@ mod tests {
     #[test]
     fn paths_are_quoted_for_shell_and_json() {
         assert_eq!(
-            shell_quote("/usr/local/bin/garmin-mcp"),
-            "/usr/local/bin/garmin-mcp"
+            shell_quote("/usr/local/bin/connect-health-mcp"),
+            "/usr/local/bin/connect-health-mcp"
         );
         if !cfg!(windows) {
-            assert_eq!(shell_quote("/My Apps/garmin-mcp"), "'/My Apps/garmin-mcp'");
+            assert_eq!(
+                shell_quote("/My Apps/connect-health-mcp"),
+                "'/My Apps/connect-health-mcp'"
+            );
         }
         assert_eq!(
-            json_string(r"C:\bin\garmin-mcp.exe"),
-            r#""C:\\bin\\garmin-mcp.exe""#
+            json_string(r"C:\bin\connect-health-mcp.exe"),
+            r#""C:\\bin\\connect-health-mcp.exe""#
         );
     }
 }

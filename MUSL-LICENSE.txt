@@ -1,4 +1,4 @@
-The x86_64-unknown-linux-musl (Linux) build of garmin-mcp statically links
+The x86_64-unknown-linux-musl (Linux) build of connect-health-mcp statically links
 musl libc (https://musl.libc.org/), which ships with the following notice.
 This is musl's COPYRIGHT file, version 1.2.5.
 

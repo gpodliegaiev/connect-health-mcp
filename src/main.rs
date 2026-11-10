@@ -1,4 +1,4 @@
-//! Entry point of the `garmin-mcp` binary.
+//! Entry point of the `connect-health-mcp` binary.
 //!
 //! This program is an MCP (Model Context Protocol) server. An MCP client
 //! (for example Claude Code or Claude Desktop) launches it as a child process
@@ -38,15 +38,15 @@ use rmcp::{ServiceExt, transport::stdio};
 // `GarminServer` struct defined in `src/server.rs`.
 use crate::{config::Config, garmin::GarminClient, server::GarminServer, update::UpdateNotice};
 
-/// Help text for `garmin-mcp --help`.
+/// Help text for `connect-health-mcp --help`.
 const USAGE: &str = "\
-garmin-mcp: an MCP server that gives AI apps access to your Garmin Connect data.
+connect-health-mcp: an MCP server that gives AI apps access to your Garmin Connect data.
 
 Usage:
-  garmin-mcp            run the MCP server on stdin/stdout (your AI app starts it)
-  garmin-mcp setup      save your Garmin API key, then show how to add the server
-  garmin-mcp --version  print the version
-  garmin-mcp --help     print this help";
+  connect-health-mcp            run the MCP server on stdin/stdout (your AI app starts it)
+  connect-health-mcp setup      save your Garmin API key, then show how to add the server
+  connect-health-mcp --version  print the version
+  connect-health-mcp --help     print this help";
 
 /// Picks what to do from the command-line arguments: run the MCP server
 /// (no arguments, which is how MCP clients start it) or one of the commands
@@ -74,7 +74,7 @@ async fn main() -> anyhow::Result<()> {
         Some("--version" | "-V") => {
             // `env!` reads a value at compile time; Cargo sets
             // `CARGO_PKG_VERSION` from `version` in `Cargo.toml`.
-            eprintln!("garmin-mcp {}", env!("CARGO_PKG_VERSION"));
+            eprintln!("connect-health-mcp {}", env!("CARGO_PKG_VERSION"));
             Ok(())
         }
         Some("--help" | "-h" | "help") => {
@@ -91,16 +91,16 @@ async fn serve() -> anyhow::Result<()> {
     // `eprintln!` (note the `e`) prints to stderr. Using `println!` here would
     // write garbage into the protocol stream and break the client.
     // The `!` means `eprintln!` is a macro, not a regular function.
-    eprintln!("garmin-mcp starting on stdio");
+    eprintln!("connect-health-mcp starting on stdio");
 
-    // Someone ran `garmin-mcp` by hand in a terminal (an MCP client would
+    // Someone ran `connect-health-mcp` by hand in a terminal (an MCP client would
     // connect stdin to a pipe instead). The server would just sit there
     // silently, so say what it is. `is_terminal` comes from the
     // `IsTerminal` trait.
     if std::io::stdin().is_terminal() {
         eprintln!(
             "This is an MCP server: your AI app starts it. To save your Garmin API key, \
-             run `garmin-mcp setup`. Press Ctrl+C to quit."
+             run `connect-health-mcp setup`. Press Ctrl+C to quit."
         );
     }
 

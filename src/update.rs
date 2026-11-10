@@ -1,4 +1,4 @@
-//! Tells the user, through the AI, when a newer garmin-mcp is released.
+//! Tells the user, through the AI, when a newer connect-health-mcp is released.
 //!
 //! At startup the server asks GitHub for the latest release, at most once a
 //! day (the answer is cached in `update-check.json` in the config folder).
@@ -12,7 +12,7 @@
 //!
 //! The check runs in the background and never delays a tool call; when it
 //! fails (offline, no releases yet) nothing happens. Turn it off with
-//! `GARMIN_MCP_NO_UPDATE_CHECK=1` (see `config.rs`).
+//! `CONNECT_HEALTH_MCP_NO_UPDATE_CHECK=1` (see `config.rs`).
 
 use std::{
     fs,
@@ -32,11 +32,12 @@ use crate::config;
 
 /// GitHub API endpoint for the newest (non-draft, non-pre-release) release.
 const LATEST_RELEASE_URL: &str =
-    "https://api.github.com/repos/gpodliegaiev/garmin-mcp/releases/latest";
+    "https://api.github.com/repos/gpodliegaiev/connect-health-mcp/releases/latest";
 
 /// Start of a release page's URL; the version is appended (see
 /// [`release_url`]).
-const RELEASE_PAGE_PREFIX: &str = "https://github.com/gpodliegaiev/garmin-mcp/releases/tag/v";
+const RELEASE_PAGE_PREFIX: &str =
+    "https://github.com/gpodliegaiev/connect-health-mcp/releases/tag/v";
 
 /// Check GitHub at most this often.
 const CHECK_INTERVAL: Duration = Duration::from_secs(24 * 60 * 60);
@@ -180,7 +181,7 @@ async fn fetch_latest() -> anyhow::Result<Option<Release>> {
         .timeout(Duration::from_secs(10))
         // GitHub's API rejects requests without a User-Agent. `concat!`
         // joins string literals at compile time.
-        .user_agent(concat!("garmin-mcp/", env!("CARGO_PKG_VERSION")))
+        .user_agent(concat!("connect-health-mcp/", env!("CARGO_PKG_VERSION")))
         // Only the fixed GitHub API URL, over HTTPS: no redirects (GitHub
         // answers this URL directly; a 3xx then fails as "unexpected
         // answer" and is retried the next day).
@@ -222,7 +223,7 @@ fn newer_version(current: &str, tag: &str) -> Option<Version> {
 
 /// How to update, depending on how this binary was installed, judged from
 /// its path:
-/// - The `curl | sh` installer puts `garmin-mcp-update` next to it.
+/// - The `curl | sh` installer puts `connect-health-mcp-update` next to it.
 /// - A binary under `target/release` or `target/debug` was built from source.
 /// - Otherwise it was downloaded by hand.
 ///
@@ -232,7 +233,7 @@ fn newer_version(current: &str, tag: &str) -> Option<Version> {
 fn update_command(exe: &Path, home: Option<&Path>, release_url: &str) -> String {
     let path = exe.to_string_lossy().replace('\\', "/");
     let dir = exe.parent().unwrap_or(Path::new(""));
-    let updater = ["garmin-mcp-update", "garmin-mcp-update.exe"]
+    let updater = ["connect-health-mcp-update", "connect-health-mcp-update.exe"]
         .iter()
         .map(|name| dir.join(name))
         .find(|candidate| candidate.is_file());
@@ -275,7 +276,7 @@ fn home_relative(path: &Path, home: Option<&Path>) -> Option<String> {
 /// suggested command without asking the user.
 fn note_text(latest: &Version, how: &str, release_url: &str) -> String {
     format!(
-        "Note from the garmin-mcp server (not Garmin data): garmin-mcp {latest} is available \
+        "Note from the connect-health-mcp server (not Garmin data): connect-health-mcp {latest} is available \
          (installed: {CURRENT_VERSION}). To update, {how}, then restart the AI app. \
          Release notes: {release_url}. Tell the user about it; do not run the update yourself."
     )
@@ -350,7 +351,10 @@ mod tests {
     #[test]
     fn cache_round_trips() {
         let path = std::env::temp_dir()
-            .join(format!("garmin-mcp-update-test-{}", std::process::id()))
+            .join(format!(
+                "connect-health-mcp-update-test-{}",
+                std::process::id()
+            ))
             .join("update-check.json");
         let cache = Cache {
             checked_at: 42,
@@ -369,54 +373,66 @@ mod tests {
         let home = Some(Path::new("/home/me"));
         assert_eq!(
             update_command(
-                Path::new("/home/me/garmin-mcp/target/release/garmin-mcp"),
+                Path::new("/home/me/connect-health-mcp/target/release/connect-health-mcp"),
                 home,
                 url
             ),
             "pull the latest code and run `cargo build --release`"
         );
         assert_eq!(
-            update_command(Path::new("/opt/tools/garmin-mcp"), home, url),
-            "download it from https://example.com/release and replace /opt/tools/garmin-mcp"
+            update_command(Path::new("/opt/tools/connect-health-mcp"), home, url),
+            "download it from https://example.com/release and replace /opt/tools/connect-health-mcp"
         );
         // Under the home folder: `~` instead of the account name.
         if !cfg!(windows) {
             assert_eq!(
-                update_command(Path::new("/home/me/apps/garmin-mcp"), home, url),
-                "download it from https://example.com/release and replace ~/apps/garmin-mcp"
+                update_command(Path::new("/home/me/apps/connect-health-mcp"), home, url),
+                "download it from https://example.com/release and replace ~/apps/connect-health-mcp"
             );
         }
 
         // Installed by the `curl | sh` installer: the updater sits next to
         // it. The temp folder stands in for the home folder here.
         let tmp = std::env::temp_dir();
-        let dir = tmp.join(format!("garmin-mcp-updater-test-{}", std::process::id()));
+        let dir = tmp.join(format!(
+            "connect-health-mcp-updater-test-{}",
+            std::process::id()
+        ));
         fs::create_dir_all(&dir).unwrap();
-        fs::write(dir.join("garmin-mcp-update"), "").unwrap();
+        fs::write(dir.join("connect-health-mcp-update"), "").unwrap();
         let sep = std::path::MAIN_SEPARATOR;
         let expected = format!(
-            "run `~{sep}garmin-mcp-updater-test-{}{sep}garmin-mcp-update`",
+            "run `~{sep}connect-health-mcp-updater-test-{}{sep}connect-health-mcp-update`",
             std::process::id()
         );
         assert_eq!(
-            update_command(&dir.join("garmin-mcp"), Some(&tmp), url),
+            update_command(&dir.join("connect-health-mcp"), Some(&tmp), url),
             expected
         );
         // Outside the home folder: the full path.
-        let expected = format!("run `{}`", dir.join("garmin-mcp-update").display());
-        assert_eq!(update_command(&dir.join("garmin-mcp"), None, url), expected);
+        let expected = format!("run `{}`", dir.join("connect-health-mcp-update").display());
+        assert_eq!(
+            update_command(&dir.join("connect-health-mcp"), None, url),
+            expected
+        );
         fs::remove_dir_all(&dir).unwrap();
 
         // A path with a space is quoted, so it can be pasted into a shell.
         // Under the home folder it is then written in full, since `~` would
         // not be expanded inside quotes.
         if !cfg!(windows) {
-            let dir = tmp.join(format!("garmin-mcp updater test {}", std::process::id()));
+            let dir = tmp.join(format!(
+                "connect-health-mcp updater test {}",
+                std::process::id()
+            ));
             fs::create_dir_all(&dir).unwrap();
-            fs::write(dir.join("garmin-mcp-update"), "").unwrap();
-            let expected = format!("run `'{}'`", dir.join("garmin-mcp-update").display());
+            fs::write(dir.join("connect-health-mcp-update"), "").unwrap();
+            let expected = format!(
+                "run `'{}'`",
+                dir.join("connect-health-mcp-update").display()
+            );
             assert_eq!(
-                update_command(&dir.join("garmin-mcp"), Some(&tmp), url),
+                update_command(&dir.join("connect-health-mcp"), Some(&tmp), url),
                 expected
             );
             fs::remove_dir_all(&dir).unwrap();
@@ -426,7 +442,7 @@ mod tests {
     #[test]
     fn note_names_versions_and_command() {
         let note = note_text(&Version::new(9, 9, 9), "run `x`", "https://example.com");
-        assert!(note.contains("garmin-mcp 9.9.9 is available"));
+        assert!(note.contains("connect-health-mcp 9.9.9 is available"));
         assert!(note.contains(&format!("installed: {CURRENT_VERSION}")));
         assert!(note.contains("To update, run `x`, then restart the AI app."));
         assert!(note.ends_with("do not run the update yourself."));
@@ -436,7 +452,7 @@ mod tests {
     fn release_url_is_built_from_the_version() {
         assert_eq!(
             release_url(&Version::new(0, 3, 0)),
-            "https://github.com/gpodliegaiev/garmin-mcp/releases/tag/v0.3.0"
+            "https://github.com/gpodliegaiev/connect-health-mcp/releases/tag/v0.3.0"
         );
     }
 

@@ -1,10 +1,10 @@
 [package]
-name = "garmin-mcp"
+name = "connect-health-mcp"
 version = "0.2.0"
 edition = "2024"
 description = "Unofficial MCP server that lets an AI read your Garmin Connect training and health data"
-repository = "https://github.com/gpodliegaiev/garmin-mcp"
-homepage = "https://github.com/gpodliegaiev/garmin-mcp"
+repository = "https://github.com/gpodliegaiev/connect-health-mcp"
+homepage = "https://github.com/gpodliegaiev/connect-health-mcp"
 readme = "README.md"
 license = "MIT"
 

@@ -1,6 +1,6 @@
 //! Runtime configuration, read from environment variables and `.env` files.
 //!
-//! Settings: `GARMIN_API_KEY` (required) and `GARMIN_MCP_NO_UPDATE_CHECK`
+//! Settings: `GARMIN_API_KEY` (required) and `CONNECT_HEALTH_MCP_NO_UPDATE_CHECK`
 //! (optional, turns off the update check). The Garmin API address is fixed
 //! in `garmin/client.rs`, not a setting: in development builds source 2
 //! below can be a `.env` in any project the user opens, and must never be
@@ -16,7 +16,7 @@
 //!    `.env` there (e.g. in a cloned repository) could otherwise swap in
 //!    someone else's Garmin key, whose activity names and descriptions would
 //!    then reach the AI as if they were the user's data.
-//! 3. `garmin-mcp/.env` in the user's config folder: `~/.config` on macOS and
+//! 3. `connect-health-mcp/.env` in the user's config folder: `~/.config` on macOS and
 //!    Linux (`$XDG_CONFIG_HOME` if set), `%APPDATA%` on Windows. The
 //!    recommended place for users: it doesn't depend on where the binary is
 //!    or which directory the MCP client starts it from, and it survives
@@ -45,7 +45,7 @@ use anyhow::Context;
 /// Name of this app's folder inside the user's config folder.
 // `const` is a compile-time constant. `&str` is a borrowed string slice; a
 // string literal like this one lives for the whole program (`'static`).
-const APP_DIR: &str = "garmin-mcp";
+const APP_DIR: &str = "connect-health-mcp";
 
 /// Settings the server needs to talk to the Garmin API.
 // No `#[derive(Debug)]` here on purpose: the derived version would print the
@@ -56,7 +56,7 @@ pub struct Config {
     /// bearer token. Secret: never log it.
     pub api_key: String,
     /// Whether to look for a newer release at startup (see `update.rs`).
-    /// `false` when `GARMIN_MCP_NO_UPDATE_CHECK` is set to anything but
+    /// `false` when `CONNECT_HEALTH_MCP_NO_UPDATE_CHECK` is set to anything but
     /// `0`, `false`, `no` or `off`.
     pub update_check: bool,
 }
@@ -101,13 +101,13 @@ impl Config {
             // `is_none_or` is `true` when the setting is missing or the
             // closure returns `true` for its value.
             update_check: sources
-                .find("GARMIN_MCP_NO_UPDATE_CHECK")
+                .find("CONNECT_HEALTH_MCP_NO_UPDATE_CHECK")
                 .is_none_or(|(value, _)| is_off(&value)),
         })
     }
 }
 
-/// Where a setting's value was found. Used by `garmin-mcp setup` to warn
+/// Where a setting's value was found. Used by `connect-health-mcp setup` to warn
 /// when another key takes priority over the one it saved.
 #[derive(Debug, PartialEq)]
 pub enum Source {
@@ -205,7 +205,7 @@ fn is_off(value: &str) -> bool {
 }
 
 /// This app's folder inside the user's config folder, e.g.
-/// `/Users/you/.config/garmin-mcp`. `None` only if the home folder is
+/// `/Users/you/.config/connect-health-mcp`. `None` only if the home folder is
 /// unknown.
 pub fn config_dir() -> Option<PathBuf> {
     config_dir_from(
@@ -217,10 +217,10 @@ pub fn config_dir() -> Option<PathBuf> {
 
 /// The logic of [`config_dir`], with the environment passed in for tests.
 ///
-/// - Windows: `%APPDATA%\garmin-mcp` (`C:\Users\you\AppData\Roaming\...`).
-/// - macOS and Linux: `$XDG_CONFIG_HOME/garmin-mcp` if that variable is set
+/// - Windows: `%APPDATA%\connect-health-mcp` (`C:\Users\you\AppData\Roaming\...`).
+/// - macOS and Linux: `$XDG_CONFIG_HOME/connect-health-mcp` if that variable is set
 ///   to an absolute path (the XDG standard says to ignore a relative one),
-///   otherwise `~/.config/garmin-mcp`. macOS's native folder would be
+///   otherwise `~/.config/connect-health-mcp`. macOS's native folder would be
 ///   `~/Library/Application Support`, but `~/.config` is easier to type and
 ///   is what many command-line tools use there too.
 fn config_dir_from(
@@ -272,7 +272,7 @@ fn env_files() -> Vec<PathBuf> {
     }
 
     // 4. Next to the binary. `current_exe()` is the running program's path,
-    // e.g. `/Users/you/.local/bin/garmin-mcp`; `.parent()` is its folder.
+    // e.g. `/Users/you/.local/bin/connect-health-mcp`; `.parent()` is its folder.
     if let Some(dir) = env::current_exe()
         .ok()
         .and_then(|exe| exe.parent().map(Path::to_path_buf))
@@ -335,9 +335,9 @@ fn missing_key_message(files: &[PathBuf]) -> String {
     }
     let suggested = config_dir()
         .map(|dir| dir.join(".env").display().to_string())
-        .unwrap_or_else(|| "~/.config/garmin-mcp/.env".to_string());
+        .unwrap_or_else(|| "~/.config/connect-health-mcp/.env".to_string());
     message.push_str(&format!(
-        "\nRun `garmin-mcp setup` to save your key to {suggested}, \
+        "\nRun `connect-health-mcp setup` to save your key to {suggested}, \
          or pass GARMIN_API_KEY in the MCP client config."
     ));
     message
@@ -365,7 +365,7 @@ mod tests {
     /// Writes `content` to a fresh file in the system temp folder and returns
     /// its path. The process id keeps parallel test runs apart.
     fn temp_env_file(name: &str, content: &str) -> PathBuf {
-        let dir = env::temp_dir().join(format!("garmin-mcp-test-{}", std::process::id()));
+        let dir = env::temp_dir().join(format!("connect-health-mcp-test-{}", std::process::id()));
         fs::create_dir_all(&dir).unwrap();
         let path = dir.join(name);
         fs::write(&path, content).unwrap();
@@ -387,7 +387,7 @@ mod tests {
 
     #[test]
     fn first_file_with_a_value_wins() {
-        let missing = env::temp_dir().join("garmin-mcp-test-does-not-exist/.env");
+        let missing = env::temp_dir().join("connect-health-mcp-test-does-not-exist/.env");
         let empty = temp_env_file("first_empty", "GARMIN_API_KEY=\n");
         let second = temp_env_file("first_second", "# comment\nGARMIN_API_KEY=  second  \n");
         let third = temp_env_file("first_third", "GARMIN_API_KEY=third\n");
@@ -416,8 +416,8 @@ mod tests {
 
     #[test]
     fn missing_key_lists_every_place_checked() {
-        let missing = env::temp_dir().join("garmin-mcp-test-does-not-exist/.env");
-        let other = temp_env_file("missing_other", "GARMIN_MCP_NO_UPDATE_CHECK=1\n");
+        let missing = env::temp_dir().join("connect-health-mcp-test-does-not-exist/.env");
+        let other = temp_env_file("missing_other", "CONNECT_HEALTH_MCP_NO_UPDATE_CHECK=1\n");
         let error = Config::resolve(no_env, &[missing.clone(), other.clone()]).unwrap_err();
         let message = error.to_string();
         assert!(message.contains("the GARMIN_API_KEY environment variable"));
@@ -429,8 +429,9 @@ mod tests {
     fn update_check_is_on_unless_turned_off() {
         let key = temp_env_file("update_check", "GARMIN_API_KEY=k\n");
         let with = |value: &'static str| {
-            let env =
-                move |name: &str| (name == "GARMIN_MCP_NO_UPDATE_CHECK").then(|| value.to_string());
+            let env = move |name: &str| {
+                (name == "CONNECT_HEALTH_MCP_NO_UPDATE_CHECK").then(|| value.to_string())
+            };
             Config::resolve(env, std::slice::from_ref(&key))
                 .unwrap()
                 .update_check
@@ -460,16 +461,16 @@ mod tests {
         let home = Some(PathBuf::from("/home/me"));
         assert_eq!(
             config_dir_from(None, None, home.clone()),
-            Some(PathBuf::from("/home/me/.config/garmin-mcp"))
+            Some(PathBuf::from("/home/me/.config/connect-health-mcp"))
         );
         assert_eq!(
             config_dir_from(None, Some("/xdg".into()), home.clone()),
-            Some(PathBuf::from("/xdg/garmin-mcp"))
+            Some(PathBuf::from("/xdg/connect-health-mcp"))
         );
         // A relative XDG_CONFIG_HOME is ignored, as the standard says.
         assert_eq!(
             config_dir_from(None, Some("relative".into()), home),
-            Some(PathBuf::from("/home/me/.config/garmin-mcp"))
+            Some(PathBuf::from("/home/me/.config/connect-health-mcp"))
         );
         assert_eq!(config_dir_from(None, None, None), None);
     }

@@ -1,8 +1,8 @@
-# garmin-mcp
+# connect-health-mcp
 
 An [MCP](https://modelcontextprotocol.io) server, written in Rust, that gives AI assistants such as Claude, ChatGPT (desktop app and Codex) and Gemini CLI read access to your Garmin Connect data through the [Garmin Connect personal API](https://developer.garmin.com/gc-developer-program/personal/personal-api/).
 
-> **Unofficial project.** garmin-mcp is independent open-source software. It is not affiliated with, endorsed by or supported by Garmin Ltd. or its subsidiaries. Garmin and Garmin Connect are trademarks of Garmin Ltd. or its subsidiaries. You need your own Garmin personal API key, and your use of the API is subject to Garmin's terms.
+> **Unofficial project.** connect-health-mcp is independent open-source software. It is not affiliated with, endorsed by or supported by Garmin Ltd. or its subsidiaries. Garmin and Garmin Connect are trademarks of Garmin Ltd. or its subsidiaries. You need your own Garmin personal API key, and your use of the API is subject to Garmin's terms.
 
 ## Tools
 
@@ -46,8 +46,8 @@ No programming knowledge is needed. You copy a few commands into a **terminal** 
 
 ### Before you start
 
-- **A Garmin Connect personal API key.** It's a long code that lets garmin-mcp read your data. Create one by following [Garmin's guide](https://developer.garmin.com/gc-developer-program/personal/personal-api/), and keep the page with the key open: you'll paste it in step 2.
-- **An AI app that supports MCP**, such as Claude Desktop, Claude Code, the ChatGPT desktop app, Codex or Gemini CLI. The web and phone versions of ChatGPT, Claude and Gemini can't use garmin-mcp.
+- **A Garmin Connect personal API key.** It's a long code that lets connect-health-mcp read your data. Create one by following [Garmin's guide](https://developer.garmin.com/gc-developer-program/personal/personal-api/), and keep the page with the key open: you'll paste it in step 2.
+- **An AI app that supports MCP**, such as Claude Desktop, Claude Code, the ChatGPT desktop app, Codex or Gemini CLI. The web and phone versions of ChatGPT, Claude and Gemini can't use connect-health-mcp.
 
 ### How to open a terminal and paste into it
 
@@ -59,35 +59,35 @@ No programming knowledge is needed. You copy a few commands into a **terminal** 
 
 To run a command below, copy it (the copy button at the right of the box works), paste it into the terminal and press Enter. Wait until the terminal shows the prompt again (the line where you can type) before the next step.
 
-### 1. Install garmin-mcp
+### 1. Install connect-health-mcp
 
 Paste the command for your system and press Enter.
 
 macOS and Linux:
 
 ```sh
-curl --proto '=https' --tlsv1.2 -LsSf https://github.com/gpodliegaiev/garmin-mcp/releases/latest/download/garmin-mcp-installer.sh | sh
+curl --proto '=https' --tlsv1.2 -LsSf https://github.com/gpodliegaiev/connect-health-mcp/releases/latest/download/connect-health-mcp-installer.sh | sh
 ```
 
 Windows:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -c "irm https://github.com/gpodliegaiev/garmin-mcp/releases/latest/download/garmin-mcp-installer.ps1 | iex"
+powershell -ExecutionPolicy Bypass -c "irm https://github.com/gpodliegaiev/connect-health-mcp/releases/latest/download/connect-health-mcp-installer.ps1 | iex"
 ```
 
-It downloads garmin-mcp from this project's GitHub releases and installs it for your user only (no administrator password needed), in the folder `~/.local/bin` (`%USERPROFILE%\.local\bin` on Windows). Nothing else, such as Rust or other developer tools, is needed.
+It downloads connect-health-mcp from this project's GitHub releases and installs it for your user only (no administrator password needed), in the folder `~/.local/bin` (`%USERPROFILE%\.local\bin` on Windows). Nothing else, such as Rust or other developer tools, is needed.
 
-**When it says it's done, close the terminal window and open a new one.** The new window finds the `garmin-mcp` command; the old one may not.
+**When it says it's done, close the terminal window and open a new one.** The new window finds the `connect-health-mcp` command; the old one may not.
 
 <details>
 <summary>Other ways to install (download by hand, check a download's signature)</summary>
 
-Builds exist for macOS (Apple Silicon and Intel), Linux x86_64 and Windows x86_64. You can also download an archive from the [releases page](https://github.com/gpodliegaiev/garmin-mcp/releases) and put the binary anywhere. On macOS, a binary downloaded with a browser is blocked by Gatekeeper the first time; allow it with `xattr -d com.apple.quarantine garmin-mcp`. The installer doesn't have this problem.
+Builds exist for macOS (Apple Silicon and Intel), Linux x86_64 and Windows x86_64. You can also download an archive from the [releases page](https://github.com/gpodliegaiev/connect-health-mcp/releases) and put the binary anywhere. On macOS, a binary downloaded with a browser is blocked by Gatekeeper the first time; allow it with `xattr -d com.apple.quarantine connect-health-mcp`. The installer doesn't have this problem.
 
 Every release archive has a signed build attestation. To check that a downloaded archive was built from this repository by its release workflow, run (with the [GitHub CLI](https://cli.github.com)):
 
 ```sh
-gh attestation verify garmin-mcp-aarch64-apple-darwin.tar.gz -R gpodliegaiev/garmin-mcp
+gh attestation verify connect-health-mcp-aarch64-apple-darwin.tar.gz -R gpodliegaiev/connect-health-mcp
 ```
 
 </details>
@@ -97,7 +97,7 @@ gh attestation verify garmin-mcp-aarch64-apple-darwin.tar.gz -R gpodliegaiev/gar
 In the new terminal window, run:
 
 ```sh
-garmin-mcp setup
+connect-health-mcp setup
 ```
 
 When it asks for the key:
@@ -108,7 +108,7 @@ When it asks for the key:
 
 **Nothing appears while you paste, not even dots or stars.** That's normal: the key is hidden on purpose, so nobody can read it off your screen. Paste only once, then press Enter.
 
-`setup` then shows how many characters it received, checks the key with Garmin, and saves it on your computer, readable only by you (in `~/.config/garmin-mcp/.env`, or `%APPDATA%\garmin-mcp\.env` on Windows). If Garmin doesn't accept the key, nothing is saved: check that you copied the whole key and run `garmin-mcp setup` again. Run it again later, too, if you ever need to replace the key.
+`setup` then shows how many characters it received, checks the key with Garmin, and saves it on your computer, readable only by you (in `~/.config/connect-health-mcp/.env`, or `%APPDATA%\connect-health-mcp\.env` on Windows). If Garmin doesn't accept the key, nothing is saved: check that you copied the whole key and run `connect-health-mcp setup` again. Run it again later, too, if you ever need to replace the key.
 
 At the end, `setup` prints what to add to Claude Code and Claude Desktop, with the right path for your computer. Keep the terminal open for step 3.
 
@@ -117,13 +117,13 @@ At the end, `setup` prints what to add to Claude Code and Claude Desktop, with t
 **Claude Desktop:**
 
 1. In Claude Desktop, open **Settings → Developer → Edit Config**. This shows a file named `claude_desktop_config.json`; open it in a text editor (TextEdit on macOS, Notepad on Windows).
-2. If the file is empty or contains only `{}`, replace everything in it with the block below. Instead of `/Users/<you>/.local/bin/garmin-mcp`, use the path that `setup` printed (keep the quotes).
+2. If the file is empty or contains only `{}`, replace everything in it with the block below. Instead of `/Users/<you>/.local/bin/connect-health-mcp`, use the path that `setup` printed (keep the quotes).
 
    ```json
    {
      "mcpServers": {
        "garmin": {
-         "command": "/Users/<you>/.local/bin/garmin-mcp"
+         "command": "/Users/<you>/.local/bin/connect-health-mcp"
        }
      }
    }
@@ -138,54 +138,54 @@ At the end, `setup` prints what to add to Claude Code and Claude Desktop, with t
 
 ### 4. Try it
 
-Start a new chat and ask, for example, "How did I sleep last night?" or "What were my last 3 runs?". The first time, the app may ask whether garmin-mcp may run a tool: allow it.
+Start a new chat and ask, for example, "How did I sleep last night?" or "What were my last 3 runs?". The first time, the app may ask whether connect-health-mcp may run a tool: allow it.
 
 ### If something goes wrong
 
-- **"command not found" or "garmin-mcp is not recognized"** after installing: close the terminal window and open a new one, then try again.
+- **"command not found" or "connect-health-mcp is not recognized"** after installing: close the terminal window and open a new one, then try again.
 - **Nothing happens when you paste the key:** that's expected, the key is hidden. Press Enter once.
-- **"Garmin did not accept this key":** copy the key again from Garmin's page, making sure you got all of it, and run `garmin-mcp setup` again.
+- **"Garmin did not accept this key":** copy the key again from Garmin's page, making sure you got all of it, and run `connect-health-mcp setup` again.
 - **The AI app doesn't see your Garmin data:** check that the path in its config is the one `setup` printed, then quit the app completely and open it again.
 
-Other commands: `garmin-mcp --help` and `garmin-mcp --version`. You never need to start garmin-mcp yourself: your AI app starts it in the background when it needs your data.
+Other commands: `connect-health-mcp --help` and `connect-health-mcp --version`. You never need to start connect-health-mcp yourself: your AI app starts it in the background when it needs your data.
 
 ### Build from source
 
 Needs Rust 1.88 or newer (install with [rustup](https://rustup.rs)):
 
 ```sh
-git clone https://github.com/gpodliegaiev/garmin-mcp.git
-cd garmin-mcp
+git clone https://github.com/gpodliegaiev/connect-health-mcp.git
+cd connect-health-mcp
 cargo build --release
-target/release/garmin-mcp setup
+target/release/connect-health-mcp setup
 ```
 
-The binary is written to `target/release/garmin-mcp`. Rebuild after pulling changes.
+The binary is written to `target/release/connect-health-mcp`. Rebuild after pulling changes.
 
 ### Uninstall
 
-Delete `garmin-mcp` and `garmin-mcp-update` from `~/.local/bin`, and the folder `~/.config/garmin-mcp` (your key, the update-check time and the installer's receipt). On Windows, the folders are `%USERPROFILE%\.local\bin`, `%APPDATA%\garmin-mcp` and `%LOCALAPPDATA%\garmin-mcp`. Then remove the server from your AI app (`claude mcp remove -s user garmin`, or the `"garmin"` entry in Claude Desktop's config).
+Delete `connect-health-mcp` and `connect-health-mcp-update` from `~/.local/bin`, and the folder `~/.config/connect-health-mcp` (your key, the update-check time and the installer's receipt). On Windows, the folders are `%USERPROFILE%\.local\bin`, `%APPDATA%\connect-health-mcp` and `%LOCALAPPDATA%\connect-health-mcp`. Then remove the server from your AI app (`claude mcp remove -s user garmin`, or the `"garmin"` entry in Claude Desktop's config).
 
 ### Configuration
 
 | Variable | Required | Default |
 |---|---|---|
 | `GARMIN_API_KEY` | yes | none |
-| `GARMIN_MCP_NO_UPDATE_CHECK` | no | unset (set to `1` to turn off the update check, see [Updates](#updates)) |
+| `CONNECT_HEALTH_MCP_NO_UPDATE_CHECK` | no | unset (set to `1` to turn off the update check, see [Updates](#updates)) |
 
 The server looks for each variable in these places, in order, and uses the first value it finds:
 
 1. An environment variable, for example set in the MCP client's config (see below).
 2. Development builds only (`cargo run`, `cargo build` without `--release`): a `.env` file in the directory the server is started from, or one of its parents. Useful for working inside this repository. Release builds ignore it, so a `.env` in a project you open can't swap in another Garmin key.
-3. **`~/.config/garmin-mcp/.env`** (`$XDG_CONFIG_HOME/garmin-mcp/.env` if that is set; `%APPDATA%\garmin-mcp\.env` on Windows). This is the recommended place. It works wherever the binary is and whichever directory the client starts it from, and it survives updates.
-4. A `.env` file next to the `garmin-mcp` binary.
+3. **`~/.config/connect-health-mcp/.env`** (`$XDG_CONFIG_HOME/connect-health-mcp/.env` if that is set; `%APPDATA%\connect-health-mcp\.env` on Windows). This is the recommended place. It works wherever the binary is and whichever directory the client starts it from, and it survives updates.
+4. A `.env` file next to the `connect-health-mcp` binary.
 
-`garmin-mcp setup` writes the recommended place for you. To write it by hand instead:
+`connect-health-mcp setup` writes the recommended place for you. To write it by hand instead:
 
 ```sh
-mkdir -p ~/.config/garmin-mcp
-echo 'GARMIN_API_KEY=<your-key>' > ~/.config/garmin-mcp/.env
-chmod 600 ~/.config/garmin-mcp/.env    # only you can read it
+mkdir -p ~/.config/connect-health-mcp
+echo 'GARMIN_API_KEY=<your-key>' > ~/.config/connect-health-mcp/.env
+chmod 600 ~/.config/connect-health-mcp/.env    # only you can read it
 ```
 
 If no key is found, the server exits with `GARMIN_API_KEY is not set` and lists every place it looked.
@@ -196,18 +196,18 @@ The repository's `.env` is git-ignored. Never commit your API key.
 
 ### Claude Code
 
-To make the server available in every project, with the key in `~/.config/garmin-mcp/.env`:
+To make the server available in every project, with the key in `~/.config/connect-health-mcp/.env`:
 
 ```sh
-claude mcp add -s user garmin -- ~/.local/bin/garmin-mcp
+claude mcp add -s user garmin -- ~/.local/bin/connect-health-mcp
 ```
 
-If you built from source or put the binary elsewhere, use that path instead (`garmin-mcp setup` prints the right one).
+If you built from source or put the binary elsewhere, use that path instead (`connect-health-mcp setup` prints the right one).
 
 Or pass the key directly instead:
 
 ```sh
-claude mcp add -s user garmin -e GARMIN_API_KEY=<your-key> -- ~/.local/bin/garmin-mcp
+claude mcp add -s user garmin -e GARMIN_API_KEY=<your-key> -- ~/.local/bin/connect-health-mcp
 ```
 
 Check the connection with `claude mcp list`, or with `/mcp` inside a session. Then ask, for example, "What were my last 3 runs?" or "How did I sleep last night?"
@@ -220,13 +220,13 @@ Add the server to Claude Desktop's config file and restart the app. The file is 
 {
   "mcpServers": {
     "garmin": {
-      "command": "/Users/<you>/.local/bin/garmin-mcp"
+      "command": "/Users/<you>/.local/bin/connect-health-mcp"
     }
   }
 }
 ```
 
-On Windows the command is `C:\\Users\\<you>\\.local\\bin\\garmin-mcp.exe` (backslashes doubled in JSON). Use the binary's full path, without `~`: Claude Desktop doesn't use your shell's `PATH` or expand `~`. `garmin-mcp setup` prints this entry with your path filled in. With the key in `~/.config/garmin-mcp/.env`, no `"env"` block is needed. To pass the key here instead, add `"env": { "GARMIN_API_KEY": "<your-key>" }`.
+On Windows the command is `C:\\Users\\<you>\\.local\\bin\\connect-health-mcp.exe` (backslashes doubled in JSON). Use the binary's full path, without `~`: Claude Desktop doesn't use your shell's `PATH` or expand `~`. `connect-health-mcp setup` prints this entry with your path filled in. With the key in `~/.config/connect-health-mcp/.env`, no `"env"` block is needed. To pass the key here instead, add `"env": { "GARMIN_API_KEY": "<your-key>" }`.
 
 ### ChatGPT and Codex (OpenAI)
 
@@ -236,14 +236,14 @@ The ChatGPT **desktop app** and the **Codex CLI** can start local MCP servers; t
 - Codex CLI:
 
   ```sh
-  codex mcp add garmin -- ~/.local/bin/garmin-mcp
+  codex mcp add garmin -- ~/.local/bin/connect-health-mcp
   ```
 
 Or add it to `~/.codex/config.toml` by hand:
 
 ```toml
 [mcp_servers.garmin]
-command = "/Users/<you>/.local/bin/garmin-mcp"
+command = "/Users/<you>/.local/bin/connect-health-mcp"
 ```
 
 Check it with `codex mcp list`, or `/mcp` inside Codex.
@@ -251,7 +251,7 @@ Check it with `codex mcp list`, or `/mcp` inside Codex.
 ### Gemini CLI (Google)
 
 ```sh
-gemini mcp add -s user garmin ~/.local/bin/garmin-mcp
+gemini mcp add -s user garmin ~/.local/bin/connect-health-mcp
 ```
 
 `-s user` makes it available in every project (without it, the server is added to the current project only). Or add it to `~/.gemini/settings.json` by hand:
@@ -260,7 +260,7 @@ gemini mcp add -s user garmin ~/.local/bin/garmin-mcp
 {
   "mcpServers": {
     "garmin": {
-      "command": "/Users/<you>/.local/bin/garmin-mcp"
+      "command": "/Users/<you>/.local/bin/connect-health-mcp"
     }
   }
 }
@@ -273,12 +273,12 @@ Check it with `/mcp list` inside Gemini CLI. The Gemini web and mobile apps can'
 Cursor, VS Code (GitHub Copilot agent mode), Windsurf and most other MCP clients use the same entry: a server named `garmin` whose command is the binary's full path, with no arguments. For example:
 
 - Cursor: add the JSON entry shown for Gemini CLI to `~/.cursor/mcp.json`.
-- VS Code: `code --add-mcp '{"name":"garmin","command":"/Users/<you>/.local/bin/garmin-mcp"}'`.
+- VS Code: `code --add-mcp '{"name":"garmin","command":"/Users/<you>/.local/bin/connect-health-mcp"}'`.
 - Windsurf: add the same JSON entry to `~/.codeium/windsurf/mcp_config.json`.
 
-On Windows, use `C:\\Users\\<you>\\.local\\bin\\garmin-mcp.exe` in JSON, and the same path with single backslashes in TOML strings written with single quotes (`'C:\Users\<you>\.local\bin\garmin-mcp.exe'`).
+On Windows, use `C:\\Users\\<you>\\.local\\bin\\connect-health-mcp.exe` in JSON, and the same path with single backslashes in TOML strings written with single quotes (`'C:\Users\<you>\.local\bin\connect-health-mcp.exe'`).
 
-With every client, the key in `~/.config/garmin-mcp/.env` is found automatically, so the entry needs no environment variables. A key passed in a client's config instead is stored there in plain text.
+With every client, the key in `~/.config/connect-health-mcp/.env` is found automatically, so the entry needs no environment variables. A key passed in a client's config instead is stored there in plain text.
 
 ## How it works
 
@@ -296,22 +296,22 @@ At startup, the server asks GitHub for the latest release, at most once a day. I
 
 | Installed with | Update command |
 |---|---|
-| The install script | `garmin-mcp-update` |
+| The install script | `connect-health-mcp-update` |
 | Built from source | `git pull`, then `cargo build --release` |
 | Downloaded by hand | download the new release and replace the binary |
 
 Then restart your AI app. Nothing is updated automatically.
 
-The check runs in the background and never slows down a tool call. If GitHub can't be reached, nothing happens. It is a plain request to GitHub's public API, so GitHub sees your IP address and a `garmin-mcp/<version>` User-Agent; no Garmin data or key is sent. The time of the last check is stored in `~/.config/garmin-mcp/update-check.json`. To turn the check off, set `GARMIN_MCP_NO_UPDATE_CHECK=1` in the environment or in `~/.config/garmin-mcp/.env`.
+The check runs in the background and never slows down a tool call. If GitHub can't be reached, nothing happens. It is a plain request to GitHub's public API, so GitHub sees your IP address and a `connect-health-mcp/<version>` User-Agent; no Garmin data or key is sent. The time of the last check is stored in `~/.config/connect-health-mcp/update-check.json`. To turn the check off, set `CONNECT_HEALTH_MCP_NO_UPDATE_CHECK=1` in the environment or in `~/.config/connect-health-mcp/.env`.
 
 ## Privacy and disclaimer
 
-- **Your Garmin data goes only from Garmin to your AI app.** garmin-mcp runs on your computer, requests your data from Garmin's API when a tool is called, and returns it to the AI app that started it. It doesn't store the data or send it anywhere else.
+- **Your Garmin data goes only from Garmin to your AI app.** connect-health-mcp runs on your computer, requests your data from Garmin's API when a tool is called, and returns it to the AI app that started it. It doesn't store the data or send it anywhere else.
 - **Your AI provider receives what the tools return.** The AI app sends tool results to its model provider (Anthropic, OpenAI, Google, ...) as part of the conversation, under that provider's terms. This includes health data such as heart rate, HRV, sleep, weight and body composition. Choose your provider and its data settings with that in mind.
-- **What is stored locally:** only your API key (`~/.config/garmin-mcp/.env`, readable only by your user when written by `garmin-mcp setup`; on Windows it keeps the default permissions of `%APPDATA%`) and the time of the last update check.
-- **Your API key is personal.** Garmin's Personal API Supplemental Terms, which you accept when you create the key, say it may be used only by you and must not be shared with anyone. garmin-mcp sends it only to Garmin, never prints it, and never puts it in tool results.
-- **Network connections:** the server connects only to Garmin's API (`personal.connectapi.garmin.com`) and, once a day, GitHub's API for the update check (see [Updates](#updates)). Nothing else, except that HTTPS certificates are checked by your operating system, which on macOS and Windows may contact the certificate authority to see if a certificate was revoked. Separately, the install script and `garmin-mcp-update` download releases from GitHub when you run them, and the install script may add `~/.local/bin` to your shell profile's `PATH`.
-- **Not medical advice.** The data and anything an AI concludes from it are for information only. garmin-mcp is provided as is, without warranty of any kind (see [LICENSE](LICENSE)).
+- **What is stored locally:** only your API key (`~/.config/connect-health-mcp/.env`, readable only by your user when written by `connect-health-mcp setup`; on Windows it keeps the default permissions of `%APPDATA%`) and the time of the last update check.
+- **Your API key is personal.** Garmin's Personal API Supplemental Terms, which you accept when you create the key, say it may be used only by you and must not be shared with anyone. connect-health-mcp sends it only to Garmin, never prints it, and never puts it in tool results.
+- **Network connections:** the server connects only to Garmin's API (`personal.connectapi.garmin.com`) and, once a day, GitHub's API for the update check (see [Updates](#updates)). Nothing else, except that HTTPS certificates are checked by your operating system, which on macOS and Windows may contact the certificate authority to see if a certificate was revoked. Separately, the install script and `connect-health-mcp-update` download releases from GitHub when you run them, and the install script may add `~/.local/bin` to your shell profile's `PATH`.
+- **Not medical advice.** The data and anything an AI concludes from it are for information only. connect-health-mcp is provided as is, without warranty of any kind (see [LICENSE](LICENSE)).
 
 ## Development
 
@@ -329,7 +329,7 @@ cargo fmt                   # format
 src/
 ├── main.rs           entry point: runs the server on stdio, or `setup` / `--help` / `--version`
 ├── config.rs         reads GARMIN_API_KEY from env vars and .env files
-├── setup.rs          `garmin-mcp setup`: checks and saves the API key
+├── setup.rs          `connect-health-mcp setup`: checks and saves the API key
 ├── update.rs         checks GitHub for a newer release and adds a note to a tool result
 ├── server.rs         MCP tools, one #[tool] method each (see the table above)
 └── garmin/

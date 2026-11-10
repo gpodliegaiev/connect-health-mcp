@@ -137,7 +137,7 @@ impl TokenManager {
     }
 
     /// Asks Garmin whether the API key works, without caching anything.
-    /// Used by `garmin-mcp setup` before it saves a key.
+    /// Used by `connect-health-mcp setup` before it saves a key.
     ///
     /// Returns `Ok(Valid)` or `Ok(Rejected(status))` when Garmin answered,
     /// and an error when it couldn't be reached. Found by probing: an unknown

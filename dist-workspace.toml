@@ -15,7 +15,7 @@ targets = ["aarch64-apple-darwin", "x86_64-apple-darwin", "x86_64-unknown-linux-
 # ~/.local/bin is on PATH on most Linux systems; the installer adds it to the shell profile otherwise
 install-path = "~/.local/bin/"
 # Whether to install an updater program
-# Install garmin-mcp-update next to the binary (update.rs suggests it in the update notice)
+# Install connect-health-mcp-update next to the binary (update.rs suggests it in the update notice)
 install-updater = true
 # Archive format for macOS and Linux (.tar.gz opens everywhere without extra tools)
 unix-archive = ".tar.gz"
