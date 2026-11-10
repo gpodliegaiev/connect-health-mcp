@@ -231,12 +231,25 @@ fn save(dir: &Path, path: &Path, content: &str) -> anyhow::Result<()> {
     let mut file = options
         .open(&temp)
         .with_context(|| format!("could not create {}", temp.display()))?;
-    file.write_all(content.as_bytes())
-        .with_context(|| format!("could not write {}", temp.display()))?;
-    // `drop` closes the file now, before it is renamed.
-    drop(file);
 
-    fs::rename(&temp, path).with_context(|| format!("could not replace {}", path.display()))
+    // From here on the temp file is ours and may hold the key, so it must
+    // not be left behind if a step fails (e.g. on Windows the rename fails
+    // while an editor or antivirus holds `.env` open). The steps run in a
+    // *closure* (`|| { ... }`, an inline function) so that `?` inside it
+    // only leaves the closure, and its result can be checked below.
+    let result = (|| {
+        file.write_all(content.as_bytes())
+            .with_context(|| format!("could not write {}", temp.display()))?;
+        // `drop` closes the file now, before it is renamed.
+        drop(file);
+        fs::rename(&temp, path).with_context(|| format!("could not replace {}", path.display()))
+    })();
+    if result.is_err() {
+        // Best effort: if even this fails, the error below is still shown
+        // and the next `setup` run removes the leftover first.
+        let _ = fs::remove_file(&temp);
+    }
+    result
 }
 
 /// Warns when a key from somewhere with higher priority (an environment
@@ -389,6 +402,19 @@ mod tests {
             let mode = fs::metadata(&path).unwrap().permissions().mode();
             assert_eq!(mode & 0o777, 0o600);
         }
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
+    fn failed_save_leaves_no_temp_file() {
+        let dir = env::temp_dir().join(format!("garmin-mcp-setup-fail-{}", std::process::id()));
+        // A non-empty folder named `.env` can't be replaced by a file, so
+        // the rename fails on every system.
+        let path = dir.join(".env");
+        fs::create_dir_all(path.join("blocker")).unwrap();
+        assert!(save(&dir, &path, "GARMIN_API_KEY=secret\n").is_err());
+        // The key must not stay behind in the temp file.
+        assert!(!dir.join(".env.tmp").exists());
         fs::remove_dir_all(&dir).unwrap();
     }
 
